@@ -1,0 +1,25 @@
+{
+  "name": "predictodao",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbdulrazaqAS/predictoDao.git"
+  },
+  "author": "AbdulrazaqAS",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AbdulrazaqAS/predictoDao/issues"
+  },
+  "homepage": "https://github.com/AbdulrazaqAS/predictoDao#readme",
+  "description": "",
+  "dependencies": {
+    "hardhat": "^2.23.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0"
+  }
+}
