@@ -107,7 +107,7 @@ contract QuestionManager {
         emit NewAnswerAdded(pred_id, ansId);
     }
 
-    function setReward(uint256 _quesId, uint256 _amount) external {
+    function updateReward(uint256 _quesId, uint256 _amount) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
         require(_amount > 0, "Amount must be > 0");
         require(isValidPredictionId(_quesId), "Invalid Prediction ID");

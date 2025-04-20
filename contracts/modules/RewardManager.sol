@@ -21,7 +21,7 @@ contract RewardManager {
     }
 
     function setReward(uint256 _predId, uint256 _amount) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
 
         (, , uint256 reward, bool rewardDistributed, ) = quesManager.predictions(_predId);
         require(!rewardDistributed, "Can't update reward when it is distributedd");
@@ -30,13 +30,13 @@ contract RewardManager {
             require(availableFunds >= _amount, "Insufficient available funds to cover amount");
         }
 
-        quesManager.setReward(_predId, _amount);
+        quesManager.updateReward(_predId, _amount);
         uint256 prevAmount = reward;
         lockedAmount = lockedAmount - prevAmount + _amount;
     }
 
     function distributeReward(uint256 _predId, uint256 _mtxId) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
 
         (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.DistributeReward, "Multisig transaction type not compatible with this function.");

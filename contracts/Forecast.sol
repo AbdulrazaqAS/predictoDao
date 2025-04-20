@@ -67,10 +67,6 @@ contract Forecast is MultiSig {
         questionManager.addAnswer(_quesId, _answer);
     }
 
-    function setReward(uint256 _quesId, uint256 _amount) external onlyAdmin {
-        questionManager.setReward(_quesId, _amount);
-    }
-
     function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external onlyAdmin {
         questionManager.updateValidAnswerToPending(_quesId, _answerIdx, _answer, _references);
     }
@@ -85,6 +81,10 @@ contract Forecast is MultiSig {
 
     function setMinStringBytes(uint8 _newLength, uint256 _mtxId) external onlyAdmin {
         questionManager.setMinStringBytes(_newLength, _mtxId);
+    }
+
+    function setMinDuration(uint256 _newValue, uint256 _mtxId) external onlyAdmin {
+        questionManager.setMinDuration(_newValue, _mtxId);
     }
 
     function getQuestionResult(uint _quesId) external view returns(uint256[] memory) {
@@ -111,10 +111,6 @@ contract Forecast is MultiSig {
         return questionManager.getValidAnswerReferences(_quesId);
     }
 
-    function setMinDuration(uint256 _newValue, uint256 _mtxId) external onlyAdmin {
-        questionManager.setMinDuration(_newValue, _mtxId);
-    }
-
     function getQuestion(uint256 _quesId) external view returns (string memory, uint256, uint256, bool, QuestionManager.ValidAnswer memory) {
         return questionManager.predictions(_quesId);
     }
@@ -136,11 +132,24 @@ contract Forecast is MultiSig {
     }
 
     // ValidationManager functions
-    function setAnswerToPendingValidation(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external {
+    function setAnswerToPendingValidation(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external onlyAdmin {
         validationManager.setAnswerToPendingValidation(_quesId, _answerIdx, _answer, _references);
     }
 
-    function validatePendingAnswer(uint256 _quesId, uint256 _mtxId) external {
+    function validatePendingAnswer(uint256 _quesId, uint256 _mtxId) external onlyAdmin {
         validationManager.validatePendingAnswer(_quesId, _mtxId);
+    }
+
+    // RewardManager functions
+    function setReward(uint256 _quesId, uint256 _amount) external onlyAdmin {
+        rewardManager.setReward(_quesId, _amount);
+    }
+
+    function distributeReward(uint256 _predId, uint256 _mtxId) external onlyAdmin {
+        rewardManager.distributeReward(_predId, _mtxId);
+    }
+
+    function getLockedAmount() external view returns (uint256) {
+        return rewardManager.lockedAmount();
     }
 }
