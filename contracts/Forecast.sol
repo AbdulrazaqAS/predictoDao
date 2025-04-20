@@ -50,5 +50,7 @@ contract Forecast is MultiSig {
         return userRegistry.hasPredicted(_quesId, _addr);
     }
 
-
+    function isRegistered(address _addr) external view returns (bool) {
+        return userRegistry.isRegistered(_addr);
+    }
 }
