@@ -145,8 +145,8 @@ contract Forecast is MultiSig {
         rewardManager.setReward(_quesId, _amount);
     }
 
-    function distributeReward(uint256 _predId, uint256 _mtxId) external onlyAdmin {
-        rewardManager.distributeReward(_predId, _mtxId);
+    function distributeReward(uint256 _quesId, uint256 _mtxId) external onlyAdmin {
+        rewardManager.distributeReward(_quesId, _mtxId);
     }
 
     function getLockedAmount() external view returns (uint256) {

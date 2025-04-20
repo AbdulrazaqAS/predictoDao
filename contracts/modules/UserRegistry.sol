@@ -47,7 +47,7 @@ contract UserRegistry {
     }
 
     function markHasPredicted(address _addr, uint256 _quesId) external {
-        require(!hasPredicted[_quesId][_addr], "Already predicted for this prediction");
+        require(!hasPredicted[_quesId][_addr], "Already predicted for this Question");
         hasPredicted[_quesId][_addr] = true;
     }
 
