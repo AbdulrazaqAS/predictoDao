@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.26;
 
-abstract contract MultiSig {
+contract MultiSig {
     struct MultisigTx {
     uint256 id;
     bool confirmed;

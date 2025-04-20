@@ -5,7 +5,7 @@ import "./MultiSig.sol";
 import "./UserRegistry.sol";
 import "./QuestionManager.sol";
 
-abstract contract RewardManager {
+contract RewardManager {
     uint256 public lockedAmount;  // amount assigned for distribution
 
     MultiSig private multisig;

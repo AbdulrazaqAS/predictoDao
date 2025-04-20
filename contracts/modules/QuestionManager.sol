@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "./MultiSig.sol";
 import "./UserRegistry.sol";
 
-abstract contract QuestionManager {
+contract QuestionManager {
     struct Prediction {
         string question;
         string[] answers;

@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "./MultiSig.sol";
 
-abstract contract UserRegistry {
+contract UserRegistry {
     struct User {
         bool isRegistered;
         uint256 balance;
