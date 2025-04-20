@@ -16,9 +16,9 @@ contract ValidationManager {
         quesManager = _quesManager;
     }
 
-    function setAnswerToPendingValidation(uint256 _quesId, int256 _answerIdx, string memory _answer, string[] memory _references) external {
+    function setAnswerToPendingValidation(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external {
         require(multisig.isAdmin(msg.sender), "Not an admin");
-        quesManager.updateValidAnswer(_quesId, _answerIdx, _answer, _references);
+        quesManager.updateValidAnswerToPending(_quesId, _answerIdx, _answer, _references);
 
         uint256 txId = multisig.submitMultisigTx(MultiSig.MultisigTxType.ValidateAnswer);
 

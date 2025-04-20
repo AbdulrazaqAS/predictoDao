@@ -54,8 +54,89 @@ contract Forecast is MultiSig {
         return userRegistry.isRegistered(_addr);
     }
 
+    // QuestionManager functions
+    function newQuestion(string memory _question, string[] memory _someAnswers, uint256 _duration) external onlyAdmin {
+        questionManager.newQuestion( _question, _someAnswers, _duration);
+    }
+
+    function predict(uint256 _quesId, uint8 _answer_idx) external {
+        questionManager.predict(_quesId, _answer_idx);
+    }
+
+    function addAnswer(uint256 _quesId, string memory _answer) external payable {
+        questionManager.addAnswer(_quesId, _answer);
+    }
+
+    function setReward(uint256 _quesId, uint256 _amount) external onlyAdmin {
+        questionManager.setReward(_quesId, _amount);
+    }
+
+    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external onlyAdmin {
+        questionManager.updateValidAnswerToPending(_quesId, _answerIdx, _answer, _references);
+    }
+
+    function validatePendingAnswer(uint256 _quesId) external onlyAdmin {
+        questionManager.validatePendingAnswer(_quesId);
+    }
+
+    function setNewAnswerFee(uint256 _newFee, uint256 _mtxId) external onlyAdmin {
+        questionManager.setNewAnswerFee(_newFee, _mtxId);
+    }
+
+    function setMinStringBytes(uint8 _newLength, uint256 _mtxId) external onlyAdmin {
+        questionManager.setMinStringBytes(_newLength, _mtxId);
+    }
+
+    function getQuestionResult(uint _quesId) external view returns(uint256[] memory) {
+        return questionManager.getQuestionResult(_quesId);
+    }
+
+    function getAnswerVoters(uint256 _quesId, uint256 answer_idx) external view returns (address[] memory) {
+        return questionManager.getAnswerVoters(_quesId, answer_idx);
+    }
+
+    function getQuestionAnswers(uint256 _quesId) external view returns (string[] memory){
+        return questionManager.getQuestionAnswers(_quesId);
+    }
+
+    function getQuestionAnswersCount(uint256 _quesId) external view returns (uint256){
+        return questionManager.getQuestionAnswersCount(_quesId);
+    }
+
+    function getQuestionValidAnswer(uint256 _quesId) external view returns (QuestionManager.ValidAnswer memory){
+        return questionManager.getQuestionValidAnswer(_quesId);
+    }
+
+    function getValidAnswerReferences(uint256 _quesId) external view returns (string[] memory){
+        return questionManager.getValidAnswerReferences(_quesId);
+    }
+
+    function setMinDuration(uint256 _newValue, uint256 _mtxId) external onlyAdmin {
+        questionManager.setMinDuration(_newValue, _mtxId);
+    }
+
+    function getQuestion(uint256 _quesId) external view returns (string memory, uint256, uint256, bool, QuestionManager.ValidAnswer memory) {
+        return questionManager.predictions(_quesId);
+    }
+
+    function getAddAnswerFee() external view returns (uint256) {
+        return questionManager.addAnswerFee();
+    }
+
+    function getMinStringBytes() external view returns (uint8) {
+        return questionManager.minStringBytes();
+    }
+
+    function getMinDuration() external view returns (uint256) {
+        return questionManager.minDuration();
+    }
+
+    function getTotalPredictions() external view returns (uint256) {
+        return questionManager.totalPredictions();
+    }
+
     // ValidationManager functions
-    function setAnswerToPendingValidation(uint256 _quesId, int256 _answerIdx, string memory _answer, string[] memory _references) external {
+    function setAnswerToPendingValidation(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external {
         validationManager.setAnswerToPendingValidation(_quesId, _answerIdx, _answer, _references);
     }
 

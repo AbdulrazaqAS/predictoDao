@@ -16,7 +16,7 @@ contract QuestionManager {
     }
 
     struct ValidAnswer {
-        int256 ansId;  // id of answer from pred answers
+        int8 ansId;  // id of answer from pred answers
         ValidAnswerStatus status;
         string answer;
         string[] references;
@@ -29,9 +29,10 @@ contract QuestionManager {
     }
 
     uint256 public addAnswerFee = 0.005 ether;
-    uint256 public minStringBytes = 4;
+    uint8 public minStringBytes = 4;
     uint256 public minDuration = 6 hours;
     uint256 public totalPredictions;
+    // TODO: Add int for answered/expired questions
 
     mapping(uint256 => Prediction) public predictions;
 
@@ -52,8 +53,8 @@ contract QuestionManager {
 
     // TODO: onlyAdmin or if caller sends eth which will be used for prize and fee
     // TODO: Prevent same question multiple times
-    function newPrediction(string memory _question, string[] memory _someAnswers, uint256 _duration) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+    function newQuestion(string memory _question, string[] memory _someAnswers, uint256 _duration) external {
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
         require(_duration >= minDuration, "Duration must be greater than minDuration");
         uint256 questionBytes = bytes(_question).length;
         require(questionBytes >= minStringBytes && questionBytes <= 32, "Invalid question length");
@@ -73,7 +74,7 @@ contract QuestionManager {
         totalPredictions++;
     }
 
-    function predict(uint256 pred_id, uint256 answer_idx) external {
+    function predict(uint256 pred_id, uint8 answer_idx) external {
         require(userRegistry.isRegistered(msg.sender), "User not registered");
         require(isValidPredictionId(pred_id), "Invalid prediction ID");
         require(isValidAnswerIndex(pred_id, answer_idx), "Invalid answer index");
@@ -107,17 +108,17 @@ contract QuestionManager {
     }
 
     function setReward(uint256 _quesId, uint256 _amount) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
         require(_amount > 0, "Amount must be > 0");
         require(isValidPredictionId(_quesId), "Invalid Prediction ID");
         predictions[_quesId].reward = _amount;
     }
 
-    function updateValidAnswer(uint256 _quesId, int256 _answerIdx, string memory _answer, string[] memory _references) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external {
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
         require(isValidPredictionId(_quesId), "Invalid prediction ID");
         require(block.timestamp > predictions[_quesId].deadline, "Prediction still ongoing");
-        require(_answerIdx == -1 || isValidAnswerIndex(_quesId, uint256(_answerIdx)), "Invalid answer index");
+        require(_answerIdx == -1 || isValidAnswerIndex(_quesId, uint8(_answerIdx)), "Invalid answer index");
         // TODO: if _answerIdx >= 0, validate whether _answer is in prediction's answers list.
 
         ValidAnswer storage validAnswer = predictions[_quesId].validAnswer;
@@ -127,9 +128,9 @@ contract QuestionManager {
         validAnswer.references = _references;
     }
 
-    function validatePendingAnswer(uint256 _predId) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
-        ValidAnswer storage validAnswer = predictions[_predId].validAnswer;
+    function validatePendingAnswer(uint256 _quesId) external {
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
+        ValidAnswer storage validAnswer = predictions[_quesId].validAnswer;
         require(validAnswer.status == ValidAnswerStatus.PENDING, "Answer not in Validation queue");
         
         validAnswer.status = ValidAnswerStatus.VALIDATED;
@@ -145,7 +146,7 @@ contract QuestionManager {
     }
 
     function setNewAnswerFee(uint256 _newFee, uint256 _mtxId) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
 
         (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.AddAnswerFeeChange, "Multisig transaction type not compatible with this function.");
@@ -159,8 +160,8 @@ contract QuestionManager {
         emit AddAnswerFeeChanged(oldFee, _newFee, _mtxId);
     }
 
-    function setMinStringBytes(uint256 _newLength, uint256 _mtxId) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+    function setMinStringBytes(uint8 _newLength, uint256 _mtxId) external {
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
 
         (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
@@ -175,7 +176,7 @@ contract QuestionManager {
     }
 
     function setMinDuration(uint256 _newValue, uint256 _mtxId) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+        // require(multisig.isAdmin(msg.sender), "Not an admin");
 
         (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
@@ -189,40 +190,40 @@ contract QuestionManager {
         emit MinDurationChanged(oldValue, _newValue, _mtxId);
     }
 
-    function getPredictionResults(uint _predId) external view returns(uint256[] memory) {
-        require(isValidPredictionId(_predId), "Invalid Prediction ID");
-        uint256 answers = predictions[_predId].answers.length;
+    function getQuestionResult(uint256 _quesId) external view returns(uint256[] memory) {
+        require(isValidPredictionId(_quesId), "Invalid Prediction ID");
+        uint256 answers = predictions[_quesId].answers.length;
         uint256[] memory results = new uint256[](answers);
 
         for (uint i=0;i<answers;i++){
-            results[i] = predictions[_predId].predictions[i].length;
+            results[i] = predictions[_quesId].predictions[i].length;
         }
 
         return results;
     }
 
-    function getAnswerVoters(uint256 _predId, uint256 answer_idx) external view returns (address[] memory) {
-        require(isValidPredictionId(_predId), "Invalid Prediction ID");
-        require(isValidAnswerIndex(_predId, answer_idx), "Invalid answer index");
+    function getAnswerVoters(uint256 _quesId, uint256 answer_idx) external view returns (address[] memory) {
+        require(isValidPredictionId(_quesId), "Invalid Prediction ID");
+        require(isValidAnswerIndex(_quesId, answer_idx), "Invalid answer index");
         
-        return predictions[_predId].predictions[answer_idx];
+        return predictions[_quesId].predictions[answer_idx];
     }
 
-    function getPredictionAnswers(uint256 _predId) external view returns (string[] memory){
-        require(isValidPredictionId(_predId), "Invalid Prediction ID");
-        return predictions[_predId].answers;
+    function getQuestionAnswers(uint256 _quesId) external view returns (string[] memory){
+        require(isValidPredictionId(_quesId), "Invalid Prediction ID");
+        return predictions[_quesId].answers;
     }
 
-    function getPredictionAnswerCount(uint256 pred_id) external view returns (uint256){
+    function getQuestionAnswersCount(uint256 pred_id) external view returns (uint256){
         require(pred_id < totalPredictions && pred_id >= 0, "Invalid Prediction ID");
         return predictions[pred_id].answers.length;
     }
 
-    function getValidAnswer(uint256 _predId) external view returns (string memory){
-        require(isValidPredictionId(_predId), "Invalid prediction ID");
-        ValidAnswer memory validAnswer = predictions[_predId].validAnswer;
+    function getQuestionValidAnswer(uint256 _quesId) external view returns (ValidAnswer memory){
+        require(isValidPredictionId(_quesId), "Invalid prediction ID");
+        ValidAnswer memory validAnswer = predictions[_quesId].validAnswer;
         require(validAnswer.status == ValidAnswerStatus.VALIDATED, "No answer is validated yet");
-        return validAnswer.answer;
+        return validAnswer;
     }
 
     function getValidAnswerReferences(uint256 _predId) external view returns (string[] memory){
