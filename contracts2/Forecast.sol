@@ -2,7 +2,9 @@
 
 pragma solidity ^0.8.26;
 
-contract Forecast {
+import "./MultiSig.sol";
+
+contract Forecast is MultiSig {
     struct Prediction {
         string question;
         string[] answers;
@@ -20,35 +22,16 @@ contract Forecast {
         string[] references;
     }
 
+    // Use mapping instead
     struct User {
         bool isRegistered;
-        bool isAdmin;
-    }
-
-    struct MultisigTx {
-        uint256 id;
-        bool confirmed;
-        bool executed;
-        MultisigTxType txType;
-        uint256 confirmations;
-        // TODO: Add purpose
-        // TODO: Add created time, then don't execute it after some max time
+        uint256 balance;
     }
 
     enum ValidAnswerStatus {
         ONGOING,
         PENDING,
         VALIDATED
-    }
-
-    enum MultisigTxType {
-        ValidateAnswer,
-        RegistrationPaymentChange,
-        AddAnswerFeeChange,
-        MinStringBytesChange,
-        MinDurationChange,
-        RequiredValidationsChange,
-        DistributeReward
     }
     
     uint256 public registrationPayment = 0.005 ether;
@@ -57,23 +40,12 @@ contract Forecast {
     //uint256 public minReward = 0.05 ether;
     uint256 public totalUsers;
     uint256 public totalPredictions;
-    uint256 public totalMultisigTxs;
     uint256 public minStringBytes = 4;
     uint256 public minDuration = 6 hours;
-    uint256 public requiredValidations = 1;
 
-    address public owner;
-    address[] public admins;
     mapping(address => User) public users;
     mapping(uint256 => Prediction) public predictions;
     mapping(uint256 => mapping(address => bool)) public hasPredicted;
-    mapping(uint256 => MultisigTx) public multisigTxs;
-    mapping(uint256 => mapping(address => bool)) public multisigConfirmations;
-
-    modifier onlyAdmin(){
-        require(users[msg.sender].isAdmin, "Only admin can call this function");
-        _;
-    }
 
     modifier onlyRegistered(){
         require(users[msg.sender].isRegistered, "User not registered yet.");
@@ -81,7 +53,6 @@ contract Forecast {
     }
     
     // Id meaning predId not answerIndex
-    event NewAdmin(address addr);
     event NewUser(address addr);
     event NewPrediction(uint256 predId, address indexed admin);
     event NewAnswerAdded(uint256 indexed predId, uint256 ansId);
@@ -93,28 +64,21 @@ contract Forecast {
     event RequiredValidationsChanged(uint256 oldVaue, uint256 newValue, uint256 mtxId);
     event MinDurationChanged(uint256 oldValue, uint256 newValue, uint256 mtxId);
     event AddAnswerFeeChanged(uint256 oldFee, uint256 newFee, uint256 mtxId);
-    event MultisigTxAdded(MultisigTxType indexed txType, uint256 mtxId);
-    event MultisigTxConfirmation(MultisigTxType indexed txType, address indexed admin, uint256 mtxId);
     event RewardDistributed(uint256 predId, uint256 mtxId);
 
     // TODO: require at least requiredValidations admin on deployment. Change requiredValidations from 1.
-    constructor() {
-        owner = msg.sender;
-
-        users[owner].isAdmin = true;
-        users[owner].isRegistered = true;
-        admins.push(msg.sender);
+    constructor() MultiSig(msg.sender, 1) {
+        users[msg.sender].isRegistered = true;
         totalUsers++;
 
-        emit NewUser(owner);
-        emit NewAdmin(owner);
+        emit NewUser(msg.sender);
     }
 
     function createAccount() external payable {
         User storage user = users[msg.sender];
 
         require(!user.isRegistered, "User already registered");
-        require(msg.value >= registrationPayment, "Insufficient registration payment");
+        require(msg.value == registrationPayment, "Invalid registration payment");
 
         user.isRegistered = true;
         totalUsers++;
@@ -122,12 +86,9 @@ contract Forecast {
         emit NewUser(msg.sender);
     }
 
-    function newAdmin(address addr) external onlyAdmin {
+    function newAdmin(address addr) public override onlyAdmin {
         require(users[addr].isRegistered, "Trying to make an unregistered user admin");
-        users[addr].isAdmin = true;
-        admins.push(msg.sender);
-
-        emit NewAdmin(addr);
+        super.newAdmin(addr);
     }
 
     // TODO: onlyAdmin or if caller sends eth which will be used for prize and fee
@@ -155,7 +116,7 @@ contract Forecast {
     function predict(uint256 pred_id, uint256 answer_idx) external onlyRegistered{
         require(isValidPredictionId(pred_id), "Invalid prediction ID");
         require(isValidAnswerIndex(pred_id, answer_idx), "Invalid answer index");
-        require(!users[msg.sender].isAdmin, "An admin can't make a prediction.");
+        require(!isAdmin(msg.sender), "An admin can't make a prediction.");
         require(!hasPredicted[pred_id][msg.sender], "Already predicted for this prediction");
         
         Prediction storage pred = predictions[pred_id];
@@ -168,7 +129,7 @@ contract Forecast {
     }
 
     function addAnswer(uint256 pred_id, string memory _answer) external payable onlyRegistered{
-        require(users[msg.sender].isAdmin || msg.value == addAnswerFee, "Payment must be same as newAnswerFee");
+        require(isAdmin(msg.sender) || msg.value == addAnswerFee, "Payment must be same as newAnswerFee");
         require(isValidPredictionId(pred_id), "Invalid prediction ID");
         require(bytes(_answer).length >= minStringBytes && bytes(_answer).length <=32, "Invalid answer length");
         require(!hasPredicted[pred_id][msg.sender], "Already predicted for this prediction.");
@@ -233,20 +194,20 @@ contract Forecast {
         require(pred.reward > 0, "No reward assigned for this prediction.");
         require(pred.validAnswer.status == ValidAnswerStatus.VALIDATED, "An answer must be validated to distribute reward");
         
-        int256 validAnswerIdx = pred.validAnswer.ansId;
-        if (validAnswerIdx != -1) {  // -1 when the valid answer in not in the array
-            // TODO: the amount per user can be insignificantly small. Instead, just have a min val
-            // if it is smaller than that, randomly select some to stick to the min.
-            address[] memory winners = pred.predictions[uint256(validAnswerIdx)];
-            uint256 amountPerWinner = pred.reward / winners.length;
-            for (uint256 i=0;i<=winners.length;i++) {
-                payable(winners[i]).transfer(amountPerWinner);
-            }
-        }
-
         lockedAmount -= pred.reward;
         mtx.executed = true;
         pred.rewardDistributed = true;
+        
+        int256 validAnswerIdx = pred.validAnswer.ansId;
+        if (validAnswerIdx != -1) {  // -1 when the valid answer in not in the array
+            // TODO: the amount per user can be insignificantly small. Have a min withdraw
+            address[] memory winners = pred.predictions[uint256(validAnswerIdx)];
+            uint256 amountPerWinner = pred.reward / winners.length;
+            for (uint256 i=0;i<=winners.length;i++) {
+                users[winners[i]].balance += amountPerWinner;
+            }
+        }
+
 
         emit RewardDistributed(_predId, _mtxId);
     }
@@ -333,36 +294,6 @@ contract Forecast {
         mtx.executed = true;
 
         emit RequiredValidationsChanged(oldValue, _newValue, mtxId);
-    }
-    
-    function addMultisigTx(MultisigTxType txType) internal onlyAdmin returns(uint256){
-        MultisigTx storage mtx = multisigTxs[totalMultisigTxs];
-        mtx.id = totalMultisigTxs;
-        mtx.txType = txType;
-
-        emit MultisigTxAdded(txType, totalMultisigTxs);
-        totalMultisigTxs++;
-
-        return totalMultisigTxs - 1;
-    }
-
-    function confirmMultisigTx(uint256 txId) public onlyAdmin {
-        require(!multisigConfirmations[txId][msg.sender], "You have already confirmed this transaction.");
-        require(txId < totalMultisigTxs, "Invalid transaction ID");  // Prevent confirming an unitiated tx.
-
-        MultisigTx storage mtx = multisigTxs[txId];
-        require(!mtx.confirmed, "Transaction already confirmed.");
-        mtx.confirmations++;
-        multisigConfirmations[txId][msg.sender] = true;
-
-        if (mtx.confirmations >= requiredValidations) mtx.confirmed = true;
-
-        emit MultisigTxConfirmation(multisigTxs[txId].txType, msg.sender, txId);
-    }
-
-    function submitMultisigTx(MultisigTxType txType) external onlyAdmin {
-        uint256 txId = addMultisigTx(txType);
-        confirmMultisigTx(txId);
     }
 
     function setAnswerToPendingValidation(uint256 _predId, int256 _answerIdx, string memory _answer, string[] memory _references) external onlyAdmin {
