@@ -20,7 +20,8 @@ contract MultiSig {
         MinStringBytesChange,
         MinDurationChange,
         RequiredValidationsChange,
-        DistributeReward
+        DistributeReward,
+        TokenChange
     }
 
     uint256 public totalMultisigTxs;

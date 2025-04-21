@@ -7,6 +7,7 @@ import "./modules/RewardManager.sol";
 import "./modules/ValidationManager.sol";
 import "./modules/MultiSig.sol";
 
+
 contract PredictoDao is MultiSig {
     UserRegistry private userRegistry;
     QuestionManager private questionManager;
@@ -15,15 +16,24 @@ contract PredictoDao is MultiSig {
 
     address public token;
 
+    event TokenChanged(address addr, uint256 mtxId);
+
     constructor(address[] memory _admins, uint8 requiredValidations) MultiSig(_admins, requiredValidations) {
-        userRegistry = new UserRegistry(this, _admins);
-        questionManager = new QuestionManager(this, userRegistry);
+        userRegistry = new UserRegistry(this, _admins, token);
+        questionManager = new QuestionManager(this, userRegistry, token);
         rewardManager = new RewardManager(this, questionManager, userRegistry);
         validationManager = new ValidationManager(this, questionManager);
     }
 
-    function setToken(address _addr, uint256 _mtxId) external onlyAdmin {
-        
+    function changeToken(address _addr, uint256 _mtxId) external onlyAdmin {
+        MultisigTx storage mtx = multisigTxs[_mtxId];
+        require(mtx.txType == MultisigTxType.TokenChange, "Multisig transaction type not compatible with this function.");
+        require(_addr != address(0), "Token address can't be address zero");
+
+        markExecuted(_mtxId);
+        token = _addr;
+
+        emit TokenChanged(_addr, _mtxId);
     }
 
     function newAdmin(address _addr) public override onlyAdmin {

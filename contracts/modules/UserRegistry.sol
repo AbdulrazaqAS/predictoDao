@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./MultiSig.sol";
 
 contract UserRegistry {
@@ -11,6 +12,7 @@ contract UserRegistry {
 
     uint256 public registrationFee = 0.005 ether;
     uint256 public totalUsers;
+    address token;
 
     mapping(address => User) public users;
     mapping(uint256 => mapping(address => bool)) public hasPredicted;
@@ -20,8 +22,9 @@ contract UserRegistry {
     event NewUser(address addr);
     event RegistrationPaymentChanged(uint256 oldPayment, uint256 newPayment, uint256 mtxId);  // mtxId: mtx used for this
 
-    constructor (MultiSig _multiSig, address[] memory _admins) {
+    constructor (MultiSig _multiSig, address[] memory _admins, address _token) {
         multisig = _multiSig;
+        token = _token;
 
         for (uint8 i=0; i<_admins.length; i++){
             User storage user = users[msg.sender];
@@ -34,11 +37,12 @@ contract UserRegistry {
         totalUsers += _admins.length;
     }
 
-    function createAccount() external payable {
-        User storage user = users[msg.sender];
+    function createAccount() external {
+        bool sent = IERC20(token).transferFrom(msg.sender, address(this), registrationFee);
+        require(sent, "Can't transfer required tokens to contract from user");
 
+        User storage user = users[msg.sender];
         require(!user.isRegistered, "User already registered");
-        require(msg.value == registrationFee, "Invalid registration payment");
 
         user.isRegistered = true;
         totalUsers++;

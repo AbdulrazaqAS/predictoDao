@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./MultiSig.sol";
 import "./UserRegistry.sol";
 
@@ -33,6 +34,7 @@ contract QuestionManager {
     uint256 public minDuration = 6 hours;
     uint256 public totalPredictions;
     // TODO: Add int for answered/expired questions
+    address token;
 
     mapping(uint256 => Question) public predictions;
 
@@ -46,9 +48,10 @@ contract QuestionManager {
     event NewAnswerAdded(uint256 indexed quesId, uint256 ansId);
     event PredictionAnswerVoted(uint256 indexed quesId, address indexed user, uint256 answerIdx);
 
-    constructor (MultiSig _multisig, UserRegistry _userRegistry) {
+    constructor (MultiSig _multisig, UserRegistry _userRegistry, address _token) {
         multisig = _multisig;
         userRegistry = _userRegistry;
+        token = _token;
     }
 
     // TODO: onlyAdmin or if caller sends eth which will be used for prize and fee
@@ -89,12 +92,17 @@ contract QuestionManager {
         emit PredictionAnswerVoted(_quesId, msg.sender, answer_idx);
     }
 
-    function addAnswer(uint256 _quesId, string memory _answer) external payable {
+    function addAnswer(uint256 _quesId, string memory _answer) external {
         require(userRegistry.isRegistered(msg.sender), "User not registered");
-        require(multisig.isAdmin(msg.sender) || msg.value == addAnswerFee, "Payment must be same as newAnswerFee");
+        // require(multisig.isAdmin(msg.sender) || msg.value == addAnswerFee, "Payment must be same as newAnswerFee");
         require(isValidPredictionId(_quesId), "Invalid Question ID");
         require(bytes(_answer).length >= minStringBytes && bytes(_answer).length <=32, "Invalid answer length");
         require(!userRegistry.hasPredicted(_quesId, msg.sender), "Already predicted for this Question");
+        
+        if (!multisig.isAdmin(msg.sender)){
+            bool sent = IERC20(token).transferFrom(msg.sender, address(this), addAnswerFee);
+            require(sent, "Can't transfer tokens to contract from caller");
+        }
         
         Question storage ques = predictions[_quesId];
         require(ques.validAnswer.status == ValidAnswerStatus.ONGOING, "Prediction not ongoing");
