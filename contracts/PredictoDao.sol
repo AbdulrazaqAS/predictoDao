@@ -7,7 +7,7 @@ import "./modules/RewardManager.sol";
 import "./modules/ValidationManager.sol";
 import "./modules/MultiSig.sol";
 
-contract Forecast is MultiSig {
+contract PredictoDao is MultiSig {
     UserRegistry private userRegistry;
     QuestionManager private questionManager;
     RewardManager private rewardManager;
