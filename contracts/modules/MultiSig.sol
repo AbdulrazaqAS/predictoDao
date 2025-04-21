@@ -45,14 +45,14 @@ contract MultiSig {
         require(_requiredValidations >= 1, "Required validations must be at least 1");
         require(_admins.length >= _requiredValidations, "Admins must be at least requiredValidations");
 
-        bool deployerIsAdmin;
-        for (uint8 i=0; i<_admins.length; i++){
-            if (_admins[i] == msg.sender){
-                deployerIsAdmin = true;
-                break;
-            }
-        }
-        require(deployerIsAdmin, "Deployer must be added as admin");
+        // bool deployerIsAdmin;
+        // for (uint8 i=0; i<_admins.length; i++){
+        //     if (_admins[i] == msg.sender){
+        //         deployerIsAdmin = true;
+        //         break;
+        //     }
+        // }
+        // require(deployerIsAdmin, "Deployer must be added as admin");
 
         admins = _admins;
         requiredValidations = _requiredValidations;
