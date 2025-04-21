@@ -13,11 +13,17 @@ contract Forecast is MultiSig {
     RewardManager private rewardManager;
     ValidationManager private validationManager;
 
+    address public token;
+
     constructor(address[] memory _admins, uint8 requiredValidations) MultiSig(_admins, requiredValidations) {
         userRegistry = new UserRegistry(this, _admins);
         questionManager = new QuestionManager(this, userRegistry);
         rewardManager = new RewardManager(this, questionManager, userRegistry);
         validationManager = new ValidationManager(this, questionManager);
+    }
+
+    function setToken(address _addr, uint256 _mtxId) external onlyAdmin {
+        
     }
 
     function newAdmin(address _addr) public override onlyAdmin {

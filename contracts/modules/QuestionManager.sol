@@ -147,9 +147,9 @@ contract QuestionManager {
     function setNewAnswerFee(uint256 _newFee, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.AddAnswerFeeChange, "Multisig transaction type not compatible with this function.");
-        require(confirmed, "No enough confirmations to execute this function.");
+        // require(confirmed, "No enough confirmations to execute this function.");
         require(_newFee >= 0, "Amount must be positive");
 
         multisig.markExecuted(_mtxId);
@@ -162,9 +162,9 @@ contract QuestionManager {
     function setMinStringBytes(uint8 _newLength, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
-        require(confirmed, "No enough confirmations to execute this function.");
+        // require(confirmed, "No enough confirmations to execute this function.");
         require(_newLength > 0, "Length must be greater than zero");
 
         multisig.markExecuted(_mtxId);
@@ -177,9 +177,9 @@ contract QuestionManager {
     function setMinDuration(uint256 _newValue, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
-        require(confirmed, "No enough confirmations to execute this function.");
+        // require(confirmed, "No enough confirmations to execute this function.");
         require(_newValue >= 60, "Duration must be greater than or equal to 60 secs");
         
         multisig.markExecuted(_mtxId);

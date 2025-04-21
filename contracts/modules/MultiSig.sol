@@ -45,15 +45,6 @@ contract MultiSig {
         require(_requiredValidations >= 1, "Required validations must be at least 1");
         require(_admins.length >= _requiredValidations, "Admins must be at least requiredValidations");
 
-        // bool deployerIsAdmin;
-        // for (uint8 i=0; i<_admins.length; i++){
-        //     if (_admins[i] == msg.sender){
-        //         deployerIsAdmin = true;
-        //         break;
-        //     }
-        // }
-        // require(deployerIsAdmin, "Deployer must be added as admin");
-
         admins = _admins;
         requiredValidations = _requiredValidations;
 
@@ -101,9 +92,12 @@ contract MultiSig {
         emit MultisigTxConfirmation(multisigTxs[txId].txType, msg.sender, txId);
     }
 
-    function markExecuted(uint256 _txId) external onlyAdmin {
+    // TODO: Fix: When called directed (not through other func) by an admin,
+    //       it will just make it unusable without updating anything reasonable.
+    function markExecuted(uint256 _txId) public onlyAdmin {
         MultisigTx storage mtx = multisigTxs[_txId];
-        require(!mtx.executed, "Multisig transaction already executed.");
+        require(mtx.confirmed, "No enough confirmations to execute this transaction");
+        require(!mtx.executed, "Multisig transaction already executed");
         mtx.executed = true;
     }
 
@@ -116,14 +110,12 @@ contract MultiSig {
 
     function setRequiredValidations(uint256 _newValue, uint256 mtxId) external onlyAdmin {
         MultisigTx storage mtx = multisigTxs[mtxId];
-        require(!mtx.executed, "Multisig transaction already executed.");
         require(mtx.txType == MultisigTxType.RequiredValidationsChange, "Multisig transaction type not compatible with this function.");
-        require(mtx.confirmed, "No enough confirmations to execute this function.");
         require(_newValue >= 1, "Value must be greater than zero");
 
+        markExecuted(mtxId);
         uint256 oldValue = requiredValidations;
         requiredValidations = _newValue;
-        mtx.executed = true;
 
         emit RequiredValidationsChanged(oldValue, _newValue, mtxId);
     }

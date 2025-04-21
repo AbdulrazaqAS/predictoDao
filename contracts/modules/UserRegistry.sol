@@ -63,9 +63,9 @@ contract UserRegistry {
 
     function setRegistrationPayment(uint256 _newPayment, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
-        (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
-        require(confirmed, "No enough confirmations to execute this function.");
+        // require(confirmed, "No enough confirmations to execute this function.");
         require(_newPayment >= 0, "Amount must be positive");
 
         multisig.markExecuted(_mtxId);

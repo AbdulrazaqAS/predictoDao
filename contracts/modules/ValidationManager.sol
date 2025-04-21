@@ -27,9 +27,9 @@ contract ValidationManager {
 
     function validatePendingAnswer(uint256 _quesId, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
-        (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.ValidateAnswer, "Multisig transaction type not compatible with this function.");
-        require(confirmed, "No enough confirmations to execute this function.");
+        // require(confirmed, "No enough confirmations to execute this function.");
         
         quesManager.validatePendingAnswer(_quesId);
         multisig.markExecuted(_mtxId);

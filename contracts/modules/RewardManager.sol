@@ -38,9 +38,9 @@ contract RewardManager {
     function distributeReward(uint256 _quesId, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, bool confirmed, , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
         require(txType == MultiSig.MultisigTxType.DistributeReward, "Multisig transaction type not compatible with this function.");
-        require(confirmed, "No enough confirmations to execute this function.");
+        // require(confirmed, "No enough confirmations to execute this function.");
         
         (, , uint256 reward, , QuestionManager.ValidAnswer memory validAns) = quesManager.predictions(_quesId);
         require(reward > 0, "No reward assigned for this Question.");
