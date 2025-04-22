@@ -14,6 +14,8 @@ contract MultiSig {
 }
 
     enum MultisigTxType {
+        AddAdmin,
+        RemoveAdmin,
         ValidateAnswer,
         RegistrationPaymentChange,
         AddAnswerFeeChange,
@@ -24,7 +26,7 @@ contract MultiSig {
         TokenChange
     }
 
-    uint256 public totalMultisigTxs;
+    uint256 public totalMultisigTxs = 1;  // 0 for tx to add admins
     uint256 public requiredValidations;
 
     address[] public admins;
@@ -32,7 +34,7 @@ contract MultiSig {
     mapping(uint256 => MultisigTx) public multisigTxs;
     mapping(uint256 => mapping(address => bool)) public multisigConfirmations;
 
-    event NewAdmin(address addr);
+    event NewAdmin(address addr, uint256 mtxId);
     event MultisigTxAdded(MultisigTxType indexed txType, uint256 mtxId);
     event MultisigTxConfirmation(MultisigTxType indexed txType, address indexed admin, uint256 mtxId);
     event RequiredValidationsChanged(uint256 oldVaue, uint256 newValue, uint256 mtxId);
@@ -46,19 +48,32 @@ contract MultiSig {
         require(_requiredValidations >= 1, "Required validations must be at least 1");
         require(_admins.length >= _requiredValidations, "Admins must be at least requiredValidations");
 
-        admins = _admins;
         requiredValidations = _requiredValidations;
 
+        // Index 0 for tx to add admins
+        MultisigTx storage mtx = multisigTxs[0];
+        mtx.confirmations = _admins.length;
+        mtx.txType = MultisigTxType.AddAdmin;
+        mtx.confirmed = true;
+        mtx.executed = true;
+
         for (uint8 i=0; i<_admins.length; i++){
-            emit NewAdmin(_admins[i]);
+            address admin = _admins[i];
+            if (!isAdmin(admin)) admins.push(admin);  // handling duplicates
+            else continue;
+
+            emit NewAdmin(admin, 0);
         }
     }
 
-    function newAdmin(address _addr) virtual public onlyAdmin {
+    function newAdmin(address _addr, uint256 _mtxId) virtual public onlyAdmin {
+        MultisigTx storage mtx = multisigTxs[_mtxId];
+        require(mtx.txType == MultisigTxType.AddAdmin, "Multisig transaction type not compatible with this function.");
         require(!isAdmin(_addr), "Address already an admin");
+        markExecuted(_mtxId);
         admins.push(_addr);
 
-        emit NewAdmin(_addr);
+        emit NewAdmin(_addr, _mtxId);
     }
 
     function isAdmin(address addr) public view returns (bool) {
