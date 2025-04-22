@@ -79,7 +79,7 @@ contract PredictoDao is MultiSig {
         questionManager.predict(_quesId, _answer_idx);
     }
 
-    function addAnswer(uint256 _quesId, string memory _answer) external payable {
+    function addAnswer(uint256 _quesId, string memory _answer) external {
         questionManager.addAnswer(_quesId, _answer);
     }
 
