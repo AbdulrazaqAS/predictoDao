@@ -35,6 +35,7 @@ contract MultiSig {
     mapping(uint256 => mapping(address => bool)) public multisigConfirmations;
 
     event NewAdmin(address addr, uint256 mtxId);
+    event AdminRemoved(address addr, uint256 mtxId);
     event MultisigTxAdded(MultisigTxType indexed txType, uint256 mtxId);
     event MultisigTxConfirmation(MultisigTxType indexed txType, address indexed admin, uint256 mtxId);
     event RequiredValidationsChanged(uint256 oldVaue, uint256 newValue, uint256 mtxId);
@@ -74,6 +75,34 @@ contract MultiSig {
         admins.push(_addr);
 
         emit NewAdmin(_addr, _mtxId);
+    }
+
+    function removeAdmin(address _addr, uint256 _mtxId) public onlyAdmin {
+        MultisigTx storage mtx = multisigTxs[_mtxId];
+        require(mtx.txType == MultisigTxType.RemoveAdmin, "Multisig transaction type not compatible with this function.");
+        require(isAdmin(_addr), "Address already an admin");
+        markExecuted(_mtxId);
+
+        uint256 adminIdx;
+        bool found = false;
+
+        for (uint256 i=0; i<admins.length; i++) {
+            address admin = admins[i];
+            if (admin == _addr) {
+                adminIdx = i;
+                found = true;
+                break;
+            }
+        }
+        require(found, "Admin not found");
+        
+        // Replace the element at index with the last element
+        admins[adminIdx] = admins[admins.length - 1];
+        
+        // Remove the last element
+        admins.pop();
+
+        emit AdminRemoved(_addr, _mtxId);
     }
 
     function isAdmin(address addr) public view returns (bool) {
