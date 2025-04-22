@@ -28,13 +28,15 @@ contract UserRegistry {
 
         for (uint8 i=0; i<_admins.length; i++){
             User storage user = users[msg.sender];
-            require(!user.isRegistered, "User already registered");  // to handle duplicate addr in _admins
-            user.isRegistered = true;
+            if(!user.isRegistered) {
+                user.isRegistered = true;  // to handle duplicate addr in _admins
+                totalUsers++;
+            }
+            else
+                continue;
 
             emit NewUser(msg.sender);
         }
-
-        totalUsers += _admins.length;
     }
 
     function createAccount() external {
