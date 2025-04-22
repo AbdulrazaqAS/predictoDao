@@ -83,8 +83,8 @@ contract PredictoDao is MultiSig {
         questionManager.addAnswer(_quesId, _answer);
     }
 
-    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external onlyAdmin {
-        questionManager.updateValidAnswerToPending(_quesId, _answerIdx, _answer, _references);
+    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer) external onlyAdmin {
+        questionManager.updateValidAnswerToPending(_quesId, _answerIdx, _answer);
     }
 
     function validatePendingAnswer(uint256 _quesId) external onlyAdmin {
@@ -123,10 +123,6 @@ contract PredictoDao is MultiSig {
         return questionManager.getQuestionValidAnswer(_quesId);
     }
 
-    function getValidAnswerReferences(uint256 _quesId) external view returns (string[] memory){
-        return questionManager.getValidAnswerReferences(_quesId);
-    }
-
     function getQuestion(uint256 _quesId) external view returns (string memory, uint256, uint256, bool, QuestionManager.ValidAnswer memory) {
         return questionManager.predictions(_quesId);
     }
@@ -148,8 +144,8 @@ contract PredictoDao is MultiSig {
     }
 
     // ValidationManager functions
-    function setAnswerToPendingValidation(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external onlyAdmin {
-        validationManager.setAnswerToPendingValidation(_quesId, _answerIdx, _answer, _references);
+    function setAnswerToPendingValidation(uint256 _quesId, int8 _answerIdx, string memory _answer) external onlyAdmin {
+        validationManager.setAnswerToPendingValidation(_quesId, _answerIdx, _answer);
     }
 
     function validatePendingAnswer(uint256 _quesId, uint256 _mtxId) external onlyAdmin {

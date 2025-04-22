@@ -20,7 +20,6 @@ contract QuestionManager {
         int8 ansId;  // id of answer from ques answers
         ValidAnswerStatus status;
         string answer;
-        string[] references;
     }
 
     enum ValidAnswerStatus {
@@ -121,7 +120,7 @@ contract QuestionManager {
         predictions[_quesId].reward = _amount;
     }
 
-    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer, string[] memory _references) external {
+    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
         require(isValidPredictionId(_quesId), "Invalid Question ID");
         require(block.timestamp > predictions[_quesId].deadline, "Prediction still ongoing");
@@ -132,7 +131,6 @@ contract QuestionManager {
         validAnswer.ansId = _answerIdx;
         validAnswer.answer = _answer;
         validAnswer.status = ValidAnswerStatus.PENDING;
-        validAnswer.references = _references;
     }
 
     function validatePendingAnswer(uint256 _quesId) external {
@@ -231,13 +229,6 @@ contract QuestionManager {
         ValidAnswer memory validAnswer = predictions[_quesId].validAnswer;
         require(validAnswer.status == ValidAnswerStatus.VALIDATED, "No answer is validated yet");
         return validAnswer;
-    }
-
-    function getValidAnswerReferences(uint256 _quesId) external view returns (string[] memory){
-        require(isValidPredictionId(_quesId), "Invalid Question Id");
-        ValidAnswer memory validAnswer = predictions[_quesId].validAnswer;
-        require(validAnswer.status == ValidAnswerStatus.VALIDATED, "No answer is validated yet");
-        return validAnswer.references;
     }
 
     function isValidPredictionId(uint256 _quesId) internal view returns (bool){
