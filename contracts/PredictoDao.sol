@@ -36,9 +36,9 @@ contract PredictoDao is MultiSig {
         emit TokenChanged(_addr, _mtxId);
     }
 
-    function newAdmin(address _addr) public override onlyAdmin {
+    function newAdmin(address _addr, uint256 _mtxId) public override onlyAdmin {
         require(userRegistry.isRegistered(_addr), "Trying to make an unregistered user admin");
-        super.newAdmin(_addr);
+        super.newAdmin(_addr, _mtxId);
     }
 
     // UserRegistry functions
