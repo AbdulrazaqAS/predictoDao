@@ -71,8 +71,8 @@ contract PredictoDao is MultiSig {
     }
 
     // QuestionManager functions
-    function newQuestion(string memory _question, string[] memory _someAnswers, uint256 _duration) external onlyAdmin {
-        questionManager.newQuestion( _question, _someAnswers, _duration);
+    function newQuestion(string memory _question, string[] memory _someAnswers, uint256 _duration, string memory _imageUrl) external onlyAdmin {
+        questionManager.newQuestion( _question, _someAnswers, _duration, _imageUrl);
     }
 
     function predict(uint256 _quesId, uint8 _answer_idx) external {
@@ -123,8 +123,8 @@ contract PredictoDao is MultiSig {
         return questionManager.getQuestionValidAnswer(_quesId);
     }
 
-    function getQuestion(uint256 _quesId) external view returns (string memory, uint256, uint256, bool, QuestionManager.ValidAnswer memory) {
-        return questionManager.predictions(_quesId);
+    function getQuestion(uint256 _quesId) external view returns (string memory, uint256, uint256, bool, QuestionManager.ValidAnswer memory, string memory) {
+        return questionManager.questions(_quesId);
     }
 
     function getAddAnswerFee() external view returns (uint256) {

@@ -23,7 +23,7 @@ contract RewardManager {
     function setReward(uint256 _quesId, uint256 _amount) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, , uint256 reward, bool rewardDistributed, ) = quesManager.predictions(_quesId);
+        (, , uint256 reward, bool rewardDistributed, ,) = quesManager.questions(_quesId);
         require(!rewardDistributed, "Can't update reward when it is distributedd");
         unchecked {
             uint256 availableFunds = address(this).balance - lockedAmount - reward;  // - reward useful when updating the amount  // Can be -ve, handle it.
@@ -42,7 +42,7 @@ contract RewardManager {
         require(txType == MultiSig.MultisigTxType.DistributeReward, "Multisig transaction type not compatible with this function.");
         // require(confirmed, "No enough confirmations to execute this function.");
         
-        (, , uint256 reward, , QuestionManager.ValidAnswer memory validAns) = quesManager.predictions(_quesId);
+        (, , uint256 reward, , QuestionManager.ValidAnswer memory validAns, ) = quesManager.questions(_quesId);
         require(reward > 0, "No reward assigned for this Question.");
         require(validAns.status == QuestionManager.ValidAnswerStatus.VALIDATED, "An answer must be validated to distribute reward");
         
