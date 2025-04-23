@@ -31,7 +31,7 @@ export default function QuestionCard({
   }, [deadline]);
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row">
+    <div className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col md:flex-row">
       {image && (
         <img
           src={image}
