@@ -1,28 +1,35 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./modules/UserRegistry.sol";
-import "./modules/QuestionManager.sol";
-import "./modules/RewardManager.sol";
-import "./modules/ValidationManager.sol";
+import "./modules/IUserRegistry.sol";
+import "./modules/IQuestionManager.sol";
+import "./modules/IRewardManager.sol";
+import "./modules/IValidationManager.sol";
 import "./modules/MultiSig.sol";
 
 
 contract PredictoDao is MultiSig {
-    UserRegistry private userRegistry;
-    QuestionManager private questionManager;
-    RewardManager private rewardManager;
-    ValidationManager private validationManager;
+    IUserRegistry private userRegistry;
+    IQuestionManager private questionManager;
+    IRewardManager private rewardManager;
+    IValidationManager private validationManager;
 
     address public token;
 
     event TokenChanged(address addr, uint256 mtxId);
 
-    constructor(address[] memory _admins, uint8 requiredValidations) MultiSig(_admins, requiredValidations) {
-        userRegistry = new UserRegistry(this, _admins, token);
-        questionManager = new QuestionManager(this, userRegistry, token);
-        rewardManager = new RewardManager(this, questionManager, userRegistry);
-        validationManager = new ValidationManager(this, questionManager);
+    constructor(
+        address[] memory _admins,
+        uint8 requiredValidations,
+        address _userRegistry,
+        address _questionManager,
+        address _rewardManager,
+        address _validationManager
+    ) MultiSig(_admins, requiredValidations) {
+        userRegistry = IUserRegistry(_userRegistry);
+        questionManager = IQuestionManager(_questionManager);
+        rewardManager = IRewardManager(_rewardManager);
+        validationManager = IValidationManager(_validationManager);
     }
 
     function changeToken(address _addr, uint256 _mtxId) external onlyAdmin {
@@ -39,6 +46,11 @@ contract PredictoDao is MultiSig {
     function newAdmin(address _addr, uint256 _mtxId) public override onlyAdmin {
         require(userRegistry.isRegistered(_addr), "Trying to make an unregistered user admin");
         super.newAdmin(_addr, _mtxId);
+    }
+
+    // TODO: MAke multisig
+    function setUserRegistry(address _addr) external onlyAdmin {
+        userRegistry = IUserRegistry(_addr);
     }
 
     // UserRegistry functions
@@ -119,11 +131,11 @@ contract PredictoDao is MultiSig {
         return questionManager.getQuestionAnswersCount(_quesId);
     }
 
-    function getQuestionValidAnswer(uint256 _quesId) external view returns (QuestionManager.ValidAnswer memory){
+    function getQuestionValidAnswer(uint256 _quesId) external view returns (IQuestionManager.ValidAnswer memory){
         return questionManager.getQuestionValidAnswer(_quesId);
     }
 
-    function getQuestion(uint256 _quesId) external view returns (string memory, uint256, uint256, bool, QuestionManager.ValidAnswer memory, string memory) {
+    function getQuestion(uint256 _quesId) external view returns (string memory, uint256, uint256, bool, IQuestionManager.ValidAnswer memory, string memory) {
         return questionManager.questions(_quesId);
     }
 

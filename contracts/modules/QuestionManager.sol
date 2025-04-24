@@ -2,8 +2,8 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./MultiSig.sol";
-import "./UserRegistry.sol";
+import "./IMultiSig.sol";
+import "./IUserRegistry.sol";
 
 contract QuestionManager {
     struct Question {
@@ -38,8 +38,8 @@ contract QuestionManager {
 
     mapping(uint256 => Question) public questions;
 
-    MultiSig private multisig;
-    UserRegistry private userRegistry;
+    IMultiSig private multisig;
+    IUserRegistry private userRegistry;
 
     event MinStringBytesChanged(uint256 oldLength, uint256 newLength, uint256 mtxId);
     event MinDurationChanged(uint256 oldValue, uint256 newValue, uint256 mtxId);
@@ -48,9 +48,9 @@ contract QuestionManager {
     event NewAnswerAdded(uint256 indexed quesId, uint256 ansId);
     event PredictionAnswerVoted(uint256 indexed quesId, address indexed user, uint256 answerIdx);
 
-    constructor (MultiSig _multisig, UserRegistry _userRegistry, address _token) {
-        multisig = _multisig;
-        userRegistry = _userRegistry;
+    constructor (address _multisig, address _userRegistry, address _token) {
+        multisig = IMultiSig(_multisig);
+        userRegistry = IUserRegistry(_userRegistry);
         token = _token;
     }
 
@@ -155,8 +155,8 @@ contract QuestionManager {
     function setNewAnswerFee(uint256 _newFee, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == MultiSig.MultisigTxType.AddAnswerFeeChange, "Multisig transaction type not compatible with this function.");
+        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        require(txType == IMultiSig.MultisigTxType.AddAnswerFeeChange, "Multisig transaction type not compatible with this function.");
         // require(confirmed, "No enough confirmations to execute this function.");
         require(_newFee >= 0, "Amount must be positive");
 
@@ -170,8 +170,8 @@ contract QuestionManager {
     function setMinStringBytes(uint8 _newLength, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
+        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        require(txType == IMultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
         // require(confirmed, "No enough confirmations to execute this function.");
         require(_newLength > 0, "Length must be greater than zero");
 
@@ -185,8 +185,8 @@ contract QuestionManager {
     function setMinDuration(uint256 _newValue, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
 
-        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
+        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        require(txType == IMultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
         // require(confirmed, "No enough confirmations to execute this function.");
         require(_newValue >= 60, "Duration must be greater than or equal to 60 secs");
         

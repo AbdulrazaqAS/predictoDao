@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./MultiSig.sol";
+import "./IMultiSig.sol";
 
 contract UserRegistry {
     struct User {
@@ -17,13 +17,13 @@ contract UserRegistry {
     mapping(address => User) public users;
     mapping(uint256 => mapping(address => bool)) public hasPredicted;
     
-    MultiSig private multisig;
+    IMultiSig private multisig;
 
     event NewUser(address addr);
     event RegistrationPaymentChanged(uint256 oldPayment, uint256 newPayment, uint256 mtxId);  // mtxId: mtx used for this
 
-    constructor (MultiSig _multiSig, address[] memory _admins, address _token) {
-        multisig = _multiSig;
+    constructor (address _multiSig, address[] memory _admins, address _token) {
+        multisig = IMultiSig(_multiSig);
         token = _token;
 
         for (uint8 i=0; i<_admins.length; i++){
@@ -69,8 +69,8 @@ contract UserRegistry {
 
     function setRegistrationPayment(uint256 _newPayment, uint256 _mtxId) external {
         // require(multisig.isAdmin(msg.sender), "Not an admin");
-        (, , , MultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == MultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
+        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
+        require(txType == IMultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
         // require(confirmed, "No enough confirmations to execute this function.");
         require(_newPayment >= 0, "Amount must be positive");
 
