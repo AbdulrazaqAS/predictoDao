@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IMultiSig.sol";
 
-contract UserRegistry {
+contract UserManager {
     struct User {
         bool isRegistered;
         uint256 balance;
@@ -15,7 +15,7 @@ contract UserRegistry {
     address token;
 
     mapping(address => User) public users;
-    mapping(uint256 => mapping(address => bool)) public hasPredicted;
+    // mapping(uint256 => mapping(address => bool)) public hasPredicted;
     
     IMultiSig private multisig;
 
@@ -52,10 +52,10 @@ contract UserRegistry {
         emit NewUser(msg.sender);
     }
 
-    function markHasPredicted(address _addr, uint256 _quesId) external {
-        require(!hasPredicted[_quesId][_addr], "Already predicted for this Question");
-        hasPredicted[_quesId][_addr] = true;
-    }
+    // function markHasPredicted(address _addr, uint256 _quesId) external {
+    //     require(!hasPredicted[_quesId][_addr], "Already predicted for this Question");
+    //     hasPredicted[_quesId][_addr] = true;
+    // }
 
     function increaseUserBalance(address _addr, uint256 _amount) external {
         users[_addr].balance += _amount;

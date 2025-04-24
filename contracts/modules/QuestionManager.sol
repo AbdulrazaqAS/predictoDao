@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./IMultiSig.sol";
-import "./IUserRegistry.sol";
+import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
+import "./IUserManager.sol";
 
-contract QuestionManager {
+contract QuestionManager is AccessManaged {
     struct Question {
         string question;
         string[] answers;
@@ -29,35 +28,37 @@ contract QuestionManager {
         VALIDATED
     }
 
-    uint256 public addAnswerFee = 0.005 ether;
     uint8 public minStringBytes = 4;
     uint256 public minDuration = 6 hours;
     uint256 public totalPredictions;
+    uint256 public lockedAmount;  // amount assigned for distribution
     // TODO: Add int for answered/expired questions
-    address token;
 
     mapping(uint256 => Question) public questions;
+    mapping(uint256 => mapping(address => bool)) public hasPredicted;
 
-    IMultiSig private multisig;
-    IUserRegistry private userRegistry;
+    IUserManager private userManager;
 
-    event MinStringBytesChanged(uint256 oldLength, uint256 newLength, uint256 mtxId);
-    event MinDurationChanged(uint256 oldValue, uint256 newValue, uint256 mtxId);
-    event AddAnswerFeeChanged(uint256 oldFee, uint256 newFee, uint256 mtxId);
+    event MinStringBytesChanged(uint256 oldLength, uint256 newLength);
+    event MinDurationChanged(uint256 oldValue, uint256 newValue);
     event NewPrediction(uint256 quesId, address indexed admin);
     event NewAnswerAdded(uint256 indexed quesId, uint256 ansId);
     event PredictionAnswerVoted(uint256 indexed quesId, address indexed user, uint256 answerIdx);
+    event RewardDistributed(uint256 predId);
 
-    constructor (address _multisig, address _userRegistry, address _token) {
-        multisig = IMultiSig(_multisig);
-        userRegistry = IUserRegistry(_userRegistry);
-        token = _token;
+    error InvalidAnswerIndex(uint8 idx);
+    error InvalidQuestionId(uint256 id);
+
+    // TODO: Have min answers per question (uint8)
+    // TODO: Shorten revert strings
+    constructor (address manager, address _userManager) AccessManaged(manager){
+        userManager = IUserManager(_userManager);
     }
 
-    // TODO: onlyAdmin or if caller sends eth which will be used for prize and fee
+    // TODO: others can pay to add
     // TODO: Prevent same question multiple times
-    function newQuestion(string memory _question, string[] memory _someAnswers, uint256 _duration, string memory imageUrl) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
+    // To QUESTION_MANAGER
+    function newQuestion(string memory _question, string[] memory _someAnswers, uint256 _duration, string memory imageUrl) external restricted {
         require(_duration >= minDuration, "Duration must be greater than minDuration");
         uint256 questionBytes = bytes(_question).length;
         require(questionBytes >= minStringBytes && questionBytes <= 32, "Invalid question length");
@@ -74,36 +75,31 @@ contract QuestionManager {
         ques.deadline = block.timestamp + _duration;
         ques.validAnswer.status = ValidAnswerStatus.ONGOING;
 
-        emit NewPrediction(totalPredictions, msg.sender);
         totalPredictions++;
+        emit NewPrediction(totalPredictions, msg.sender);
     }
 
-    function predict(uint256 _quesId, uint8 answer_idx) external {
-        require(userRegistry.isRegistered(msg.sender), "User not registered");
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
-        require(isValidAnswerIndex(_quesId, answer_idx), "Invalid answer index");
-        require(!multisig.isAdmin(msg.sender), "An admin can't make a prediction.");
+    // To PREDICTER
+    function predict(uint256 _quesId, uint8 _ansIdx) external restricted {
+        require(!hasPredicted[_quesId][msg.sender], "Already predicted for this Question");
+        
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
+        if (!isValidAnswerIndex(_quesId, _ansIdx)) revert InvalidAnswerIndex(_ansIdx);
         
         Question storage ques = questions[_quesId];
         require(block.timestamp < ques.deadline, "Question timeout.");
 
-        userRegistry.markHasPredicted(msg.sender, _quesId);
-        ques.predictions[answer_idx].push(msg.sender);
+        hasPredicted[_quesId][msg.sender] = true;
+        ques.predictions[_ansIdx].push(msg.sender);
 
-        emit PredictionAnswerVoted(_quesId, msg.sender, answer_idx);
+        emit PredictionAnswerVoted(_quesId, msg.sender, _ansIdx);
     }
 
-    function addAnswer(uint256 _quesId, string memory _answer) external {
-        require(userRegistry.isRegistered(msg.sender), "User not registered");
-        // require(multisig.isAdmin(msg.sender) || msg.value == addAnswerFee, "Payment must be same as newAnswerFee");
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
+    // TODO: Let others pay to add a new answer
+    // To QUESTION_MANAGER
+    function addAnswer(uint256 _quesId, string memory _answer) external restricted {
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
         require(bytes(_answer).length >= minStringBytes && bytes(_answer).length <=32, "Invalid answer length");
-        require(!userRegistry.hasPredicted(_quesId, msg.sender), "Already predicted for this Question");
-        
-        if (!multisig.isAdmin(msg.sender)){
-            bool sent = IERC20(token).transferFrom(msg.sender, address(this), addAnswerFee);
-            require(sent, "Can't transfer tokens to contract from caller");
-        }
         
         Question storage ques = questions[_quesId];
         require(ques.validAnswer.status == ValidAnswerStatus.ONGOING, "Prediction not ongoing");
@@ -115,18 +111,30 @@ contract QuestionManager {
         emit NewAnswerAdded(_quesId, ansId);
     }
 
-    function updateReward(uint256 _quesId, uint256 _amount) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
+    // To FUNDS_MANAGER
+    function setReward(uint256 _quesId, uint256 _amount) external restricted {
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
         require(_amount > 0, "Amount must be > 0");
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
+
+        Question storage ques = questions[_quesId];
+        require(!ques.rewardDistributed, "Can't update reward when it is distributedd");
+        unchecked {
+            uint256 availableFunds = address(this).balance - lockedAmount - ques.reward;  // - reward useful when updating the amount  // Can be -ve, handle it.
+            require(availableFunds >= _amount, "Insufficient available funds to cover amount");
+        }
+
         questions[_quesId].reward = _amount;
+
+        uint256 prevAmount = ques.reward;
+        lockedAmount = lockedAmount - prevAmount + _amount;
     }
 
-    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
+    // To QUESTION_MANAGER
+    function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer) external restricted {
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
+        if (_answerIdx != -1 && !isValidAnswerIndex(_quesId, uint8(_answerIdx))) revert InvalidAnswerIndex(uint8(_answerIdx));
+
         require(block.timestamp > questions[_quesId].deadline, "Prediction still ongoing");
-        require(_answerIdx == -1 || isValidAnswerIndex(_quesId, uint8(_answerIdx)), "Invalid answer index");
         // TODO: if _answerIdx >= 0, validate whether _answer is in Question's answers list.
 
         ValidAnswer storage validAnswer = questions[_quesId].validAnswer;
@@ -135,70 +143,63 @@ contract QuestionManager {
         validAnswer.status = ValidAnswerStatus.PENDING;
     }
 
-    function validatePendingAnswer(uint256 _quesId) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
+    // AnswerValidator
+    function validatePendingAnswer(uint256 _quesId) external restricted {
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
         ValidAnswer storage validAnswer = questions[_quesId].validAnswer;
         require(validAnswer.status == ValidAnswerStatus.PENDING, "Answer not in Validation queue");
         
         validAnswer.status = ValidAnswerStatus.VALIDATED;
     }
 
-    function markRewardDistributed(uint256 _quesId) external {
-        require(multisig.isAdmin(msg.sender), "Not an admin");
+    // To FUNDS_MANAGER
+    function distributeReward(uint256 _quesId) external restricted{
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
 
         Question storage ques = questions[_quesId];
+        require(ques.reward > 0, "No reward assigned for this Question.");
+        require(ques.validAnswer.status == ValidAnswerStatus.VALIDATED, "An answer must be validated to distribute reward");
+
         require(!ques.rewardDistributed, "Reward has already been distributed");
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
         ques.rewardDistributed = true;
+
+        lockedAmount -= ques.reward;
+        
+        int8 validAnswerIdx = ques.validAnswer.ansId;
+        if (validAnswerIdx != -1) {  // -1 when the valid answer in not in the array
+            // TODO: the amount per user can be insignificantly small. Have a min withdraw
+            address[] memory winners = getAnswerVoters(_quesId, uint8(validAnswerIdx));
+            uint256 amountPerWinner = ques.reward / winners.length;
+            for (uint256 i=0;i<=winners.length;i++) {
+                userManager.increaseUserBalance(winners[i], amountPerWinner);
+            }
+        }
+
+        emit RewardDistributed(_quesId);
     }
 
-    function setNewAnswerFee(uint256 _newFee, uint256 _mtxId) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
-
-        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == IMultiSig.MultisigTxType.AddAnswerFeeChange, "Multisig transaction type not compatible with this function.");
-        // require(confirmed, "No enough confirmations to execute this function.");
-        require(_newFee >= 0, "Amount must be positive");
-
-        multisig.markExecuted(_mtxId);
-        uint256 oldFee = addAnswerFee;
-        addAnswerFee = _newFee;
-
-        emit AddAnswerFeeChanged(oldFee, _newFee, _mtxId);
-    }
-
-    function setMinStringBytes(uint8 _newLength, uint256 _mtxId) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
-
-        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == IMultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
-        // require(confirmed, "No enough confirmations to execute this function.");
+    // To QUESTION_MANAGER
+    function setMinStringBytes(uint8 _newLength) external restricted {
         require(_newLength > 0, "Length must be greater than zero");
 
-        multisig.markExecuted(_mtxId);
         uint256 oldLength = minStringBytes;
         minStringBytes = _newLength;
 
-        emit MinStringBytesChanged(oldLength, _newLength, _mtxId);
+        emit MinStringBytesChanged(oldLength, _newLength);
     }
 
-    function setMinDuration(uint256 _newValue, uint256 _mtxId) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
-
-        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == IMultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
-        // require(confirmed, "No enough confirmations to execute this function.");
+    // To QUESTION_MANAGER
+    function setMinDuration(uint256 _newValue) external restricted {
         require(_newValue >= 60, "Duration must be greater than or equal to 60 secs");
         
-        multisig.markExecuted(_mtxId);
         uint256 oldValue = minDuration;
         minDuration = _newValue;
 
-        emit MinDurationChanged(oldValue, _newValue, _mtxId);
+        emit MinDurationChanged(oldValue, _newValue);
     }
 
     function getQuestionResult(uint256 _quesId) external view returns(uint256[] memory) {
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
+        require(isValidQuestionId(_quesId), "Invalid Question ID");
         uint256 answers = questions[_quesId].answers.length;
         uint256[] memory results = new uint256[](answers);
 
@@ -209,36 +210,36 @@ contract QuestionManager {
         return results;
     }
 
-    function getAnswerVoters(uint256 _quesId, uint256 answer_idx) external view returns (address[] memory) {
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
-        require(isValidAnswerIndex(_quesId, answer_idx), "Invalid answer index");
+    function getAnswerVoters(uint256 _quesId, uint8 _ansIdx) public view returns (address[] memory) {
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
+        if (!isValidAnswerIndex(_quesId, _ansIdx)) revert InvalidAnswerIndex(_ansIdx);
         
-        return questions[_quesId].predictions[answer_idx];
+        return questions[_quesId].predictions[_ansIdx];
     }
 
     function getQuestionAnswers(uint256 _quesId) external view returns (string[] memory){
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
         return questions[_quesId].answers;
     }
 
     function getQuestionAnswersCount(uint256 _quesId) external view returns (uint256){
-        require(_quesId < totalPredictions && _quesId >= 0, "Invalid Question ID");
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
         return questions[_quesId].answers.length;
     }
 
     function getQuestionValidAnswer(uint256 _quesId) external view returns (ValidAnswer memory){
-        require(isValidPredictionId(_quesId), "Invalid Question ID");
+        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
         ValidAnswer memory validAnswer = questions[_quesId].validAnswer;
         require(validAnswer.status == ValidAnswerStatus.VALIDATED, "No answer is validated yet");
         return validAnswer;
     }
 
-    function isValidPredictionId(uint256 _quesId) internal view returns (bool){
+    function isValidQuestionId(uint256 _quesId) internal view returns (bool){
         if (_quesId >= totalPredictions || _quesId < 0) return false;
         return true;
     }
 
-    function isValidAnswerIndex(uint256 _quesId, uint256 _answerIdx) internal view returns(bool) {
+    function isValidAnswerIndex(uint256 _quesId, uint8 _answerIdx) internal view returns(bool) {
         if (_answerIdx < 0 || _answerIdx >= questions[_quesId].answers.length) return false;
         return true;
     }

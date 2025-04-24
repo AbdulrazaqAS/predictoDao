@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-interface IUserRegistry {
+interface IUserManager {
     struct User {
         bool isRegistered;
         uint256 balance;
