@@ -13,6 +13,7 @@ contract PredictoToken is ERC20, AccessManaged, ERC20Permit {
         AccessManaged(manager)
     {}
 
+    // To MINTER
     function mint(address to, uint256 amount) public restricted {
         _mint(to, amount);
     }

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract QuestionManager is AccessManaged {
     struct Question {
@@ -36,19 +35,13 @@ contract QuestionManager is AccessManaged {
     mapping(uint256 => Question) public questions;
     mapping(uint256 => mapping(address => bool)) public hasPredicted;
 
-    address token;
-    address prizePool;
-
     event MinStringBytesChanged(uint256 oldLength, uint256 newLength);
     event MinDurationChanged(uint256 oldValue, uint256 newValue);
     event NewPrediction(uint256 quesId, address indexed admin);
     event NewAnswerAdded(uint256 indexed quesId, uint256 ansId);
     event PredictionAnswerVoted(uint256 indexed quesId, address indexed user, uint256 answerIdx);
-    event RewardDistributed(uint256 quesId);
     event PendingValidAnswer(uint256 quesId);
     event PendingAnswerValidated(uint256 quesId);
-    event TokenChanged(address token);
-    event PrizePoolChanged(address prizePool);
 
     error InvalidAnswerIndex(uint8 idx);
     error InvalidQuestionId(uint256 id);
@@ -149,24 +142,6 @@ contract QuestionManager is AccessManaged {
         validAnswer.status = ValidAnswerStatus.VALIDATED;
 
         emit PendingAnswerValidated(_quesId);
-    }
-
-    // To FUNDS_MANAGER
-    function setToken(address _token) external restricted {
-        require(_token != address(0), "Invalid address");
-        require(_token != token, "Same address");
-        token = _token;
-
-        emit TokenChanged(_token);
-    }
-    
-    // To FUNDS_MANAGER
-    function setPrizePool(address _pool) external restricted {
-        require(_pool != address(0), "Invalid address");
-        require(_pool != prizePool, "Same address");
-        prizePool = _pool;
-
-        emit PrizePoolChanged(_pool);
     }
 
     // To QUESTION_MANAGER

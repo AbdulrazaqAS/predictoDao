@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// import "./modules/IUserManager.sol";
-// import "./modules/IQuestionManager.sol";
+import {IPredictoToken} from "./IPredictoToken.sol";
 import "./modules/MultiSig.sol";
 
-
 contract PredictoDao is MultiSig {
-    // IUserManager private userRegistry;
-    // IQuestionManager private questionManager;
-
     address public token;
 
     uint8 public constant CHANGE_TOKEN = 11;
+    uint8 public constant DISTRIBUTE_REWARD = 12;
 
     event TokenChanged(address addr);
 
@@ -34,9 +30,20 @@ contract PredictoDao is MultiSig {
             address newToken = abi.decode(mtx.data, (address));
             changeToken(newToken);
             executed = true;
+        }else if (mtx.txType == DISTRIBUTE_REWARD){
+            (address[] memory winners, uint256 amount) = abi.decode(mtx.data, (address[], uint256));
+            mintToMany(winners, amount);
+            executed = true;
         }
 
         return executed;
+    }
+
+    function mintToMany(address[] memory winners, uint256 amount) private {
+        IPredictoToken predictoToken = IPredictoToken(token);
+        for (uint256 i=0; i<winners.length; i++) {
+            predictoToken.mint(winners[i], amount);
+        }
     }
 
     function changeToken(address _addr) private {
