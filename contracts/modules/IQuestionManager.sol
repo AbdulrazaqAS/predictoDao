@@ -17,7 +17,6 @@ interface IQuestionManager {
     function totalPredictions() external view returns (uint256);
     function minStringBytes() external view returns (uint8);
     function minDuration() external view returns (uint256);
-    function lockedAmount() external view returns (uint256);
     function hasPredicted(uint256 _quesId, address _addr) external view returns (bool);
     function questions(uint256 _quesId) external view returns(string memory, uint256, uint256, bool, ValidAnswer memory, string memory);
 
@@ -27,7 +26,6 @@ interface IQuestionManager {
     function setReward(uint256 _quesId, uint256 _amount) external;
     function updateValidAnswerToPending(uint256 _quesId, int8 _answerIdx, string memory _answer) external;
     function validatePendingAnswer(uint256 _quesId) external;
-    function distributeReward(uint256 _quesId) external;
     function setMinStringBytes(uint8 _newLength) external;
     function setMinDuration(uint256 _newValue) external;
 

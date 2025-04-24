@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
-import "./IUserManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract QuestionManager is AccessManaged {
     struct Question {
@@ -31,13 +31,13 @@ contract QuestionManager is AccessManaged {
     uint8 public minStringBytes = 4;
     uint256 public minDuration = 6 hours;
     uint256 public totalPredictions;
-    uint256 public lockedAmount;  // amount assigned for distribution // TODO: should be in a FUNDSMANAGER contract
     // TODO: Add int for answered/expired questions
 
     mapping(uint256 => Question) public questions;
     mapping(uint256 => mapping(address => bool)) public hasPredicted;
 
-    IUserManager private userManager;
+    address token;
+    address prizePool;
 
     event MinStringBytesChanged(uint256 oldLength, uint256 newLength);
     event MinDurationChanged(uint256 oldValue, uint256 newValue);
@@ -47,15 +47,15 @@ contract QuestionManager is AccessManaged {
     event RewardDistributed(uint256 quesId);
     event PendingValidAnswer(uint256 quesId);
     event PendingAnswerValidated(uint256 quesId);
+    event TokenChanged(address token);
+    event PrizePoolChanged(address prizePool);
 
     error InvalidAnswerIndex(uint8 idx);
     error InvalidQuestionId(uint256 id);
 
     // TODO: Have min answers per question (max of int8)
     // TODO: Shorten revert strings
-    constructor (address manager, address _userManager) AccessManaged(manager){
-        userManager = IUserManager(_userManager);
-    }
+    constructor (address manager) AccessManaged(manager){}
 
     // TODO: others can pay to add
     // TODO: Prevent same question multiple times
@@ -120,15 +120,8 @@ contract QuestionManager is AccessManaged {
 
         Question storage ques = questions[_quesId];
         require(!ques.rewardDistributed, "Can't update reward when it is distributedd");
-        unchecked {
-            uint256 availableFunds = address(this).balance - lockedAmount - ques.reward;  // - reward useful when updating the amount  // Can be -ve, handle it.
-            require(availableFunds >= _amount, "Insufficient available funds to cover amount");
-        }
 
         questions[_quesId].reward = _amount;
-
-        uint256 prevAmount = ques.reward;
-        lockedAmount = lockedAmount - prevAmount + _amount;
     }
 
     // To QUESTION_MANAGER
@@ -159,28 +152,21 @@ contract QuestionManager is AccessManaged {
     }
 
     // To FUNDS_MANAGER
-    function distributeReward(uint256 _quesId) external restricted{
-        if (!isValidQuestionId(_quesId)) revert InvalidQuestionId(_quesId);
+    function setToken(address _token) external restricted {
+        require(_token != address(0), "Invalid address");
+        require(_token != token, "Same address");
+        token = _token;
 
-        Question storage ques = questions[_quesId];
-        require(ques.reward > 0, "No reward assigned for this Question.");
-        require(ques.validAnswer.status == ValidAnswerStatus.VALIDATED, "An answer must be validated to distribute reward");
+        emit TokenChanged(_token);
+    }
+    
+    // To FUNDS_MANAGER
+    function setPrizePool(address _pool) external restricted {
+        require(_pool != address(0), "Invalid address");
+        require(_pool != prizePool, "Same address");
+        prizePool = _pool;
 
-        require(!ques.rewardDistributed, "Reward has already been distributed");
-        ques.rewardDistributed = true;
-
-        lockedAmount -= ques.reward;
-        
-        int8 validAnswerIdx = ques.validAnswer.ansId;
-        if (validAnswerIdx != -1) {  // -1 when the valid answer in not in the array
-            address[] memory winners = getAnswerVoters(_quesId, uint8(validAnswerIdx));
-            uint256 amountPerWinner = ques.reward / winners.length;
-            for (uint256 i=0;i<=winners.length;i++) {
-                userManager.increaseUserBalance(winners[i], amountPerWinner);
-            }
-        }
-
-        emit RewardDistributed(_quesId);
+        emit PrizePoolChanged(_pool);
     }
 
     // To QUESTION_MANAGER
