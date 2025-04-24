@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./modules/IUserRegistry.sol";
+import "./modules/IUserManager.sol";
 import "./modules/IQuestionManager.sol";
-import "./modules/IRewardManager.sol";
-import "./modules/IValidationManager.sol";
 import "./modules/MultiSig.sol";
 
 
 contract PredictoDao is MultiSig {
-    IUserRegistry private userRegistry;
+    IUserManager private userRegistry;
     IQuestionManager private questionManager;
-    IRewardManager private rewardManager;
-    IValidationManager private validationManager;
 
     address public token;
 
@@ -22,30 +18,19 @@ contract PredictoDao is MultiSig {
         address[] memory _admins,
         uint8 requiredValidations,
         address _userRegistry,
-        address _questionManager,
-        address _rewardManager,
-        address _validationManager
+        address _questionManager
     ) MultiSig(_admins, requiredValidations) {
-        userRegistry = IUserRegistry(_userRegistry);
+        userRegistry = IUserManager(_userRegistry);
         questionManager = IQuestionManager(_questionManager);
-        rewardManager = IRewardManager(_rewardManager);
-        validationManager = IValidationManager(_validationManager);
     }
 
-    function changeToken(address _addr, uint256 _mtxId) external onlyAdmin {
-        MultisigTx storage mtx = multisigTxs[_mtxId];
-        require(mtx.txType == MultisigTxType.TokenChange, "Multisig transaction type not compatible with this function.");
+    function changeToken(address _addr, uint256 _mtxId) private {
         require(_addr != address(0), "Token address can't be address zero");
 
         markExecuted(_mtxId);
         token = _addr;
 
         emit TokenChanged(_addr, _mtxId);
-    }
-
-    function newAdmin(address _addr, uint256 _mtxId) public override onlyAdmin {
-        require(userRegistry.isRegistered(_addr), "Trying to make an unregistered user admin");
-        super.newAdmin(_addr, _mtxId);
     }
 
     // TODO: MAke multisig

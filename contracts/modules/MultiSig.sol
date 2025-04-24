@@ -5,40 +5,32 @@ pragma solidity ^0.8.26;
 contract MultiSig {
     struct MultisigTx {
     uint256 id;
-    bool confirmed;
+    address to;
     bool executed;
-    MultisigTxType txType;
+    uint8 txType;
     uint256 confirmations;
-    // TODO: Add purpose
+    bytes data;
     // TODO: Add created time, then don't execute it after some max time
 }
 
-    enum MultisigTxType {
-        AddAdmin,
-        RemoveAdmin,
-        ValidateAnswer,
-        RegistrationPaymentChange,
-        AddAnswerFeeChange,
-        MinStringBytesChange,
-        MinDurationChange,
-        RequiredValidationsChange,
-        DistributeReward,
-        TokenChange
-    }
+    uint256 public totalMultisigTxs;
+    uint8 public requiredValidations;
 
-    uint256 public totalMultisigTxs = 1;  // 0 for tx to add admins
-    uint256 public requiredValidations;
+    uint8 public constant ADD_ADMIN = 0;
+    uint8 public constant REMOVE_ADMIN = 1;
+    uint8 public constant CHANGE_VALIDATIONS = 2;
 
     address[] public admins;
 
     mapping(uint256 => MultisigTx) public multisigTxs;
     mapping(uint256 => mapping(address => bool)) public multisigConfirmations;
 
-    event NewAdmin(address addr, uint256 mtxId);
-    event AdminRemoved(address addr, uint256 mtxId);
-    event MultisigTxAdded(MultisigTxType indexed txType, uint256 mtxId);
-    event MultisigTxConfirmation(MultisigTxType indexed txType, address indexed admin, uint256 mtxId);
-    event RequiredValidationsChanged(uint256 oldVaue, uint256 newValue, uint256 mtxId);
+    event AdminAdded(address addr);
+    event AdminRemoved(address addr);
+    event ValidationsChanged(uint8 oldValue, uint8 newValue);
+    event MultisigTxAdded(uint8 indexed txType, uint256 mtxId);
+    event MultisigTxConfirmation(uint8 indexed txType, address indexed admin, uint256 mtxId);
+    event MultisigTxExecuted(uint8 indexed txType, uint256 mtxId);
 
     modifier onlyAdmin(){
         require(isAdmin(msg.sender), "Caller is not an admin");
@@ -51,38 +43,22 @@ contract MultiSig {
 
         requiredValidations = _requiredValidations;
 
-        // Index 0 for tx to add admins
-        MultisigTx storage mtx = multisigTxs[0];
-        mtx.confirmations = _admins.length;
-        mtx.txType = MultisigTxType.AddAdmin;
-        mtx.confirmed = true;
-        mtx.executed = true;
-
         for (uint8 i=0; i<_admins.length; i++){
             address admin = _admins[i];
             if (!isAdmin(admin)) admins.push(admin);  // handling duplicates
             else continue;
 
-            emit NewAdmin(admin, 0);
+            emit AdminAdded(admin);
         }
     }
 
-    function newAdmin(address _addr, uint256 _mtxId) virtual public onlyAdmin {
-        MultisigTx storage mtx = multisigTxs[_mtxId];
-        require(mtx.txType == MultisigTxType.AddAdmin, "Multisig transaction type not compatible with this function.");
+    function newAdmin(address _addr) private {
         require(!isAdmin(_addr), "Address already an admin");
-        markExecuted(_mtxId);
         admins.push(_addr);
-
-        emit NewAdmin(_addr, _mtxId);
+        emit AdminAdded(_addr);
     }
 
-    function removeAdmin(address _addr, uint256 _mtxId) public onlyAdmin {
-        MultisigTx storage mtx = multisigTxs[_mtxId];
-        require(mtx.txType == MultisigTxType.RemoveAdmin, "Multisig transaction type not compatible with this function.");
-        require(isAdmin(_addr), "Address already an admin");
-        markExecuted(_mtxId);
-
+    function removeAdmin(address _addr) public onlyAdmin {
         uint256 adminIdx;
         bool found = false;
 
@@ -101,8 +77,8 @@ contract MultiSig {
         
         // Remove the last element
         admins.pop();
-
-        emit AdminRemoved(_addr, _mtxId);
+        
+        emit AdminRemoved(_addr);
     }
 
     function isAdmin(address addr) public view returns (bool) {
@@ -112,10 +88,11 @@ contract MultiSig {
         return false;
     }
 
-    function addMultisigTx(MultisigTxType txType) private onlyAdmin returns(uint256){
+    function addMultisigTx(uint8 txType, bytes memory data) private onlyAdmin returns(uint256){
         MultisigTx storage mtx = multisigTxs[totalMultisigTxs];
         mtx.id = totalMultisigTxs;
         mtx.txType = txType;
+        mtx.data = data;
 
         emit MultisigTxAdded(txType, totalMultisigTxs);
         totalMultisigTxs++;
@@ -128,40 +105,48 @@ contract MultiSig {
         require(txId < totalMultisigTxs, "Invalid transaction ID");  // Prevent confirming an unitiated tx.
 
         MultisigTx storage mtx = multisigTxs[txId];
-        require(!mtx.confirmed, "Transaction already confirmed.");
+        require(!mtx.executed, "Multisig transaction already executed");
         mtx.confirmations++;
         multisigConfirmations[txId][msg.sender] = true;
 
-        if (mtx.confirmations >= requiredValidations) mtx.confirmed = true;
+        if (mtx.confirmations >= requiredValidations) executeTx(txId);
 
         emit MultisigTxConfirmation(multisigTxs[txId].txType, msg.sender, txId);
     }
 
-    // TODO: Fix: When called directed (not through other func) by an admin,
-    //       it will just make it unusable without updating anything reasonable.
-    function markExecuted(uint256 _txId) public onlyAdmin {
+    function executeTx(uint256 _txId) public virtual onlyAdmin {
         MultisigTx storage mtx = multisigTxs[_txId];
-        require(mtx.confirmed, "No enough confirmations to execute this transaction");
-        require(!mtx.executed, "Multisig transaction already executed");
+        
         mtx.executed = true;
+        
+        if (mtx.txType == ADD_ADMIN){
+            // TODO: COnvert data to address and call
+            // newAdmin(address(0));
+        }
+        else if (mtx.txType == CHANGE_VALIDATIONS){
+            // TODO: COnvert data to number and call the func
+        }
+        else {
+            (bool success, ) = mtx.to.call(mtx.data);
+            require(success, "Tx failed");
+            // TODO: follow up failure
+        }
+
+        emit MultisigTxExecuted(mtx.txType, _txId);
     }
 
-    function submitMultisigTx(MultisigTxType txType) external onlyAdmin returns (uint256) {
-        uint256 txId = addMultisigTx(txType);
+    function submitMultisigTx(uint8 txType, bytes calldata data) external onlyAdmin returns (uint256) {
+        uint256 txId = addMultisigTx(txType, data);
         confirmMultisigTx(txId);
 
         return txId;
     }
 
-    function setRequiredValidations(uint256 _newValue, uint256 mtxId) external onlyAdmin {
-        MultisigTx storage mtx = multisigTxs[mtxId];
-        require(mtx.txType == MultisigTxType.RequiredValidationsChange, "Multisig transaction type not compatible with this function.");
+    function setRequiredValidations(uint8 _newValue) private onlyAdmin {
         require(_newValue >= 1, "Value must be greater than zero");
-
-        markExecuted(mtxId);
-        uint256 oldValue = requiredValidations;
+        uint8 oldValue = requiredValidations;
         requiredValidations = _newValue;
 
-        emit RequiredValidationsChanged(oldValue, _newValue, mtxId);
+        emit ValidationsChanged(oldValue, _newValue);
     }
 }

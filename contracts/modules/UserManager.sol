@@ -1,45 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./IMultiSig.sol";
 
-contract UserManager {
+contract UserManager is AccessManaged {
     struct User {
         bool isRegistered;
         uint256 balance;
     }
 
     uint256 public registrationFee = 0.005 ether;
+    uint256 public minWithdraw = 0.003 ether;
     uint256 public totalUsers;
-    address token;
+    address public token;
 
     mapping(address => User) public users;
-    // mapping(uint256 => mapping(address => bool)) public hasPredicted;
-    
-    IMultiSig private multisig;
 
     event NewUser(address addr);
-    event RegistrationPaymentChanged(uint256 oldPayment, uint256 newPayment, uint256 mtxId);  // mtxId: mtx used for this
-
-    constructor (address _multiSig, address[] memory _admins, address _token) {
-        multisig = IMultiSig(_multiSig);
+    event RegistrationFeeChanged(uint256 oldFee, uint256 newFee);
+    event MinWithdrawChanged(uint256 oldFee, uint256 newFee);
+    
+    constructor (address manager, address _token) AccessManaged(manager) {
         token = _token;
-
-        for (uint8 i=0; i<_admins.length; i++){
-            User storage user = users[msg.sender];
-            if(!user.isRegistered) {
-                user.isRegistered = true;  // to handle duplicate addr in _admins
-                totalUsers++;
-            }
-            else
-                continue;
-
-            emit NewUser(msg.sender);
-        }
     }
 
     function createAccount() external {
+        // TODO: Send to FUNDS MANAGER contract
         bool sent = IERC20(token).transferFrom(msg.sender, address(this), registrationFee);
         require(sent, "Can't transfer required tokens to contract from user");
 
@@ -52,33 +39,46 @@ contract UserManager {
         emit NewUser(msg.sender);
     }
 
-    // function markHasPredicted(address _addr, uint256 _quesId) external {
-    //     require(!hasPredicted[_quesId][_addr], "Already predicted for this Question");
-    //     hasPredicted[_quesId][_addr] = true;
-    // }
-
-    function increaseUserBalance(address _addr, uint256 _amount) external {
+    // To FUNDS_MANAGER, QUESTION_MANAGER
+    function increaseUserBalance(address _addr, uint256 _amount) external restricted {
         users[_addr].balance += _amount;
     }
 
-    function decreaseUserBalance(address _addr, uint256 _amount) external {
+    // To FUNDS_MANAGER
+    function decreaseUserBalance(address _addr, uint256 _amount) external restricted {
         User storage user = users[_addr];
         require(user.balance > _amount, "Insufficient balance");
         user.balance -= _amount;
     }
 
-    function setRegistrationPayment(uint256 _newPayment, uint256 _mtxId) external {
-        // require(multisig.isAdmin(msg.sender), "Not an admin");
-        (, , , IMultiSig.MultisigTxType txType,) = multisig.multisigTxs(_mtxId);
-        require(txType == IMultiSig.MultisigTxType.MinDurationChange, "Multisig transaction type not compatible with this function.");
-        // require(confirmed, "No enough confirmations to execute this function.");
+    // PREDICTER
+    function withdraw() external restricted {
+        User storage user = users[msg.sender];
+        require(user.balance > minWithdraw, "Insufficient withdraw amount");
+
+        user.balance = 0;
+        IERC20(token).transfer(msg.sender, user.balance);
+
+    }
+
+    // To FUNDS_MANAGER
+    function setRegistrationFee(uint256 _newPayment) external restricted{
         require(_newPayment >= 0, "Amount must be positive");
 
-        multisig.markExecuted(_mtxId);
         uint256 oldPayment = registrationFee;
         registrationFee = _newPayment;
 
-        emit RegistrationPaymentChanged(oldPayment, _newPayment, _mtxId);
+        emit RegistrationFeeChanged(oldPayment, _newPayment);
+    }
+
+    // To FUNDS_MANAGER
+    function setMinWithdraw(uint256 _newPayment) external restricted{
+        require(_newPayment >= 0, "Amount must be positive");
+
+        uint256 oldPayment = registrationFee;
+        minWithdraw = _newPayment;
+
+        emit MinWithdrawChanged(oldPayment, _newPayment);
     }
 
     function isRegistered(address _addr) external view returns (bool) {

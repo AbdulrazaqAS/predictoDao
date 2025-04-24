@@ -31,7 +31,7 @@ contract QuestionManager is AccessManaged {
     uint8 public minStringBytes = 4;
     uint256 public minDuration = 6 hours;
     uint256 public totalPredictions;
-    uint256 public lockedAmount;  // amount assigned for distribution
+    uint256 public lockedAmount;  // amount assigned for distribution // TODO: should be in a FUNDSMANAGER contract
     // TODO: Add int for answered/expired questions
 
     mapping(uint256 => Question) public questions;
@@ -44,12 +44,14 @@ contract QuestionManager is AccessManaged {
     event NewPrediction(uint256 quesId, address indexed admin);
     event NewAnswerAdded(uint256 indexed quesId, uint256 ansId);
     event PredictionAnswerVoted(uint256 indexed quesId, address indexed user, uint256 answerIdx);
-    event RewardDistributed(uint256 predId);
+    event RewardDistributed(uint256 quesId);
+    event PendingValidAnswer(uint256 quesId);
+    event PendingAnswerValidated(uint256 quesId);
 
     error InvalidAnswerIndex(uint8 idx);
     error InvalidQuestionId(uint256 id);
 
-    // TODO: Have min answers per question (uint8)
+    // TODO: Have min answers per question (max of int8)
     // TODO: Shorten revert strings
     constructor (address manager, address _userManager) AccessManaged(manager){
         userManager = IUserManager(_userManager);
@@ -141,6 +143,8 @@ contract QuestionManager is AccessManaged {
         validAnswer.ansId = _answerIdx;
         validAnswer.answer = _answer;
         validAnswer.status = ValidAnswerStatus.PENDING;
+
+        emit PendingValidAnswer(_quesId);
     }
 
     // AnswerValidator
@@ -150,6 +154,8 @@ contract QuestionManager is AccessManaged {
         require(validAnswer.status == ValidAnswerStatus.PENDING, "Answer not in Validation queue");
         
         validAnswer.status = ValidAnswerStatus.VALIDATED;
+
+        emit PendingAnswerValidated(_quesId);
     }
 
     // To FUNDS_MANAGER
@@ -167,7 +173,6 @@ contract QuestionManager is AccessManaged {
         
         int8 validAnswerIdx = ques.validAnswer.ansId;
         if (validAnswerIdx != -1) {  // -1 when the valid answer in not in the array
-            // TODO: the amount per user can be insignificantly small. Have a min withdraw
             address[] memory winners = getAnswerVoters(_quesId, uint8(validAnswerIdx));
             uint256 amountPerWinner = ques.reward / winners.length;
             for (uint256 i=0;i<=winners.length;i++) {
