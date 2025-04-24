@@ -11,7 +11,7 @@ abstract contract MultiSig {
     uint256 confirmations;
     bytes data;
     // TODO: Add created time, then don't execute it after some max time
-}
+    }
 
     uint256 public totalMultisigTxs;
     uint8 public requiredValidations;
@@ -58,7 +58,7 @@ abstract contract MultiSig {
         emit AdminAdded(_addr);
     }
 
-    function removeAdmin(address _addr) public onlyAdmin {
+    function removeAdmin(address _addr) private {
         uint256 adminIdx;
         bool found = false;
 
@@ -117,11 +117,15 @@ abstract contract MultiSig {
     function executeSelfTx(uint256 _txId) internal virtual {
         MultisigTx storage mtx = multisigTxs[_txId];
         if (mtx.txType == ADD_ADMIN){
-            // TODO: COnvert data to address and call
-            // newAdmin(address(0));
+            address admin = abi.decode(mtx.data, (address));
+            newAdmin(admin);
+        } else if (mtx.txType == REMOVE_ADMIN){
+            address admin = abi.decode(mtx.data, (address));
+            removeAdmin(admin);
         }
         else if (mtx.txType == CHANGE_VALIDATIONS){
-            // TODO: COnvert data to number and call the func
+            uint8 newValue = abi.decode(mtx.data, (uint8));
+            setRequiredValidations(newValue);
         }
     }
 
