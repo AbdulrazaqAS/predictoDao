@@ -114,19 +114,24 @@ abstract contract MultiSig {
         emit MultisigTxConfirmation(multisigTxs[txId].txType, msg.sender, txId);
     }
 
-    function executeSelfTx(uint256 _txId) internal virtual {
+    function executeSelfTx(uint256 _txId) internal virtual returns (bool) {
         MultisigTx storage mtx = multisigTxs[_txId];
         if (mtx.txType == ADD_ADMIN){
             address admin = abi.decode(mtx.data, (address));
             newAdmin(admin);
+            return true;
         } else if (mtx.txType == REMOVE_ADMIN){
             address admin = abi.decode(mtx.data, (address));
             removeAdmin(admin);
+            return true;
         }
         else if (mtx.txType == CHANGE_VALIDATIONS){
             uint8 newValue = abi.decode(mtx.data, (uint8));
             setRequiredValidations(newValue);
+            return true;
         }
+
+        return false;
     }
 
     function executeTx(uint256 _txId) private {

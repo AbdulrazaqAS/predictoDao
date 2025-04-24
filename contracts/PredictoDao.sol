@@ -12,28 +12,38 @@ contract PredictoDao is MultiSig {
 
     address public token;
 
-    uint8 constant CHANGE_TOKEN = 11;
+    uint8 public constant CHANGE_TOKEN = 11;
 
-    event TokenChanged(address addr, uint256 mtxId);
+    event TokenChanged(address addr);
 
     constructor(
         address[] memory _admins,
         uint8 requiredValidations,
+        address _token
     ) MultiSig(_admins, requiredValidations) {
+        token = _token;
     }
 
-    function changeToken(address _addr, uint256 _mtxId) private {
-        require(_addr != address(0), "Token address can't be address zero");
+    function executeSelfTx(uint256 _txId) internal override returns (bool) {
+        MultisigTx storage mtx = multisigTxs[_txId];
+        bool executed = super.executeSelfTx(_txId);
 
-        markExecuted(_mtxId);
+        if (executed) return true;
+
+        if (mtx.txType == CHANGE_TOKEN){
+            address newToken = abi.decode(mtx.data, (address));
+            changeToken(newToken);
+            executed = true;
+        }
+
+        return executed;
+    }
+
+    function changeToken(address _addr) private {
+        require(_addr != address(0), "Token address can't be address zero");
+        require(_addr != token, "Token address same");
         token = _addr;
 
-        emit TokenChanged(_addr, _mtxId);
+        emit TokenChanged(_addr);
     }
-
-    // TODO: MAke multisig
-    function setUserRegistry(address _addr) external onlyAdmin {
-        userRegistry = IUserRegistry(_addr);
-    }
-
 }
