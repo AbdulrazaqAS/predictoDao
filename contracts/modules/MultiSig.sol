@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.26;
 
-contract MultiSig {
+abstract contract MultiSig {
     struct MultisigTx {
     uint256 id;
     address to;
@@ -114,17 +114,24 @@ contract MultiSig {
         emit MultisigTxConfirmation(multisigTxs[txId].txType, msg.sender, txId);
     }
 
-    function executeTx(uint256 _txId) public virtual onlyAdmin {
+    function executeSelfTx(uint256 _txId) internal virtual {
         MultisigTx storage mtx = multisigTxs[_txId];
-        
-        mtx.executed = true;
-        
         if (mtx.txType == ADD_ADMIN){
             // TODO: COnvert data to address and call
             // newAdmin(address(0));
         }
         else if (mtx.txType == CHANGE_VALIDATIONS){
             // TODO: COnvert data to number and call the func
+        }
+    }
+
+    function executeTx(uint256 _txId) private {
+        MultisigTx storage mtx = multisigTxs[_txId];
+        
+        mtx.executed = true;
+        
+        if (mtx.to == address(this)){
+            executeSelfTx(_txId);
         }
         else {
             (bool success, ) = mtx.to.call(mtx.data);
