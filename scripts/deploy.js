@@ -16,7 +16,7 @@ async function main() {
   console.log("Deployer:", deployerAddress);
   const deployerBal = await deployer.provider.getBalance(deployerAddress);
   console.log("Deployer balance:", ethers.formatEther(deployerBal), "eth");
-
+  
   const PredictoAccessManager = await ethers.getContractFactory("PredictoAccessManager");
   const predictoAccessManager = await PredictoAccessManager.deploy(deployer);
   await predictoAccessManager.waitForDeployment();
