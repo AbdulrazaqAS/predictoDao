@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IPredictoToken} from "./IPredictoToken.sol";
-import "./modules/MultiSig.sol";
+import "./MultiSig.sol";
 
 contract PredictoDao is MultiSig {
     address public token;
