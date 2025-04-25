@@ -1,5 +1,15 @@
 const path = require("path");
 
+async function setFunctionRole(manager, target, targetFunc, role){
+  const funcId = ethers.id(targetFunc).slice(0, 10);  // Ox + 4 bytes or Ox + 8 hex chars
+  // console.log(targetFunc, "id:", funcId);
+  await manager.setTargetFunctionRole(target, [funcId], role);
+}
+
+async function grantRole(manager, role, addr, delay=0){
+  await manager.grantRole(role, addr, delay);
+}
+
 async function main() {
   if (network.name === "hardhat") {
     console.warn(

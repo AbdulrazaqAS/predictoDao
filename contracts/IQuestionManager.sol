@@ -14,7 +14,7 @@ interface IQuestionManager {
         string answer;
     }
 
-    function totalPredictions() external view returns (uint256);
+    function totalQuestions() external view returns (uint256);
     function minStringBytes() external view returns (uint8);
     function minDuration() external view returns (uint256);
     function hasPredicted(uint256 _quesId, address _addr) external view returns (bool);

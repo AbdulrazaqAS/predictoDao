@@ -3,6 +3,9 @@ const { expect, assert } = require("chai");
 
 describe("Predicto", () => {
     const MINTER = 1n;
+    const PREDICTER = 2n;
+    const QUESTION_MANAGER = 3n;
+    const FUNDS_MANAGER = 3n;
 
     async function deployManagerFixture() {
         const [initialAdmin] = await ethers.getSigners();
@@ -17,7 +20,6 @@ describe("Predicto", () => {
 
     async function deployTokenFixture() {
         const { initialAdmin, manager, managerAddr } = await loadFixture(deployManagerFixture);
-        const signers = await ethers.getSigners();
 
         const PredictoToken = await ethers.getContractFactory("PredictoToken");
         const predictoToken = await PredictoToken.deploy(managerAddr);
@@ -25,6 +27,17 @@ describe("Predicto", () => {
         const tokenAddr = predictoToken.target;
 
         return { initialAdmin, manager, managerAddr, token: predictoToken, tokenAddr }
+    }
+    
+    async function deployQuestionManagerFixture() {
+        const { initialAdmin, manager, managerAddr } = await loadFixture(deployManagerFixture);
+
+        const QuestionManager = await ethers.getContractFactory("QuestionManager");
+        const questionManager = await QuestionManager.deploy(managerAddr);
+        await questionManager.waitForDeployment();
+        const questionMngrAddr = questionManager.target;
+
+        return { initialAdmin, manager, managerAddr, questionManager, questionMngrAddr }
     }
 
     async function setFunctionRole(manager, target, targetFunc, role){
@@ -108,6 +121,79 @@ describe("Predicto", () => {
     });
 
     describe("QuestionManager", () => {
+        it("Should allow initial admin to add a new question", async () => {
+            const { questionManager, initialAdmin } = await loadFixture(deployQuestionManagerFixture);
         
+            const answers = ["Yes", "No"];
+            const imageUrl = "https://example.com/img.png";
+        
+            await expect(
+              questionManager.connect(initialAdmin).newQuestion("Is Solidity fun?", answers, 60 * 60 * 12, imageUrl)
+            ).to.emit(questionManager, "NewQuestion");
+        
+            const ques = await questionManager.getQuestionAnswers(0);
+            expect(ques).to.deep.equal(answers);
+        });
+
+        it("Should allow a PREDICTER to predict an answer", async () => {
+            const { manager, questionManager, initialAdmin } = await loadFixture(deployQuestionManagerFixture);
+            const [, signer1] = await ethers.getSigners();
+
+            const answers = ["Up", "Down"];
+            await questionManager.connect(initialAdmin).newQuestion("Market direction?", answers, 60 * 60 * 12, "url");
+            
+            await setFunctionRole(manager, target = questionManager, targetFunc = "predict(uint256,uint8)", role = PREDICTER);
+            await grantRole(manager, role = PREDICTER, addr = signer1.address);
+
+            await expect(questionManager.connect(signer1).predict(0, 0))
+                .to.emit(questionManager, "QuestionAnswerVoted");
+        });
+        
+        it("Should not allow a non PREDICTER to predict an answer", async () => {
+            const { manager, questionManager, initialAdmin } = await loadFixture(deployQuestionManagerFixture);
+            const [, signer1] = await ethers.getSigners();
+
+            const answers = ["Up", "Down"];
+            await questionManager.connect(initialAdmin).newQuestion("Market direction?", answers, 60 * 60 * 12, "url");
+
+            await expect(questionManager.connect(signer1).predict(0, 0))
+                .to.be.revertedWithCustomError(questionManager, "AccessManagedUnauthorized");
+        });
+
+        it("Should allow a QUESTION_MANAGER to add a new answer", async () => {
+            const { questionManager, manager } = await loadFixture(deployQuestionManagerFixture);
+            const [, signer1] = await ethers.getSigners();
+            
+            let targetFunc = "newQuestion(string,string[],uint256,string)";
+            await setFunctionRole(manager, target = questionManager, targetFunc, role = QUESTION_MANAGER);
+            targetFunc = "addAnswer(uint256,string)";
+            await setFunctionRole(manager, target = questionManager, targetFunc, role = QUESTION_MANAGER);
+            await grantRole(manager, role = QUESTION_MANAGER, addr = signer1.address);
+            
+            await questionManager.connect(signer1).newQuestion("Q?", ["Yes"], 3600 * 6, "url");
+        
+            await expect(questionManager.connect(signer1).addAnswer(0, "No"))
+              .to.emit(questionManager, "NewAnswerAdded");
+        
+            const answers = await questionManager.getQuestionAnswers(0);
+            expect(answers).to.include("No");
+        });
+
+        it("should set reward if caller is FUNDS_MANAGER", async () => {
+            const { questionManager, manager } = await loadFixture(deployQuestionManagerFixture);
+            const [, signer1] = await ethers.getSigners();
+            
+            let targetFunc = "newQuestion(string,string[],uint256,string)";
+            await setFunctionRole(manager, target = questionManager, targetFunc, role = QUESTION_MANAGER);
+            targetFunc = "setReward(uint256,uint256)";
+            await setFunctionRole(manager, target = questionManager, targetFunc, role = FUNDS_MANAGER);
+            await grantRole(manager, role = FUNDS_MANAGER, addr = signer1.address);
+
+            await questionManager.connect(signer1).newQuestion("Q?", ["Yes"], 3600 * 6, "url");
+        
+            await questionManager.connect(signer1).setReward(0, 1000);
+            const ques = await questionManager.questions(0);
+            expect(ques.reward).to.equal(1000);
+        });
     });
 });

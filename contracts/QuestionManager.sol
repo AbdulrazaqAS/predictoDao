@@ -27,9 +27,9 @@ contract QuestionManager is AccessManaged {
         VALIDATED
     }
 
-    uint8 public minStringBytes = 4;
+    uint8 public minStringBytes = 2;
     uint256 public minDuration = 6 hours;
-    uint256 public totalPredictions;
+    uint256 public totalQuestions;
     // TODO: Add int for answered/expired questions
 
     mapping(uint256 => Question) public questions;
@@ -37,9 +37,9 @@ contract QuestionManager is AccessManaged {
 
     event MinStringBytesChanged(uint256 oldLength, uint256 newLength);
     event MinDurationChanged(uint256 oldValue, uint256 newValue);
-    event NewPrediction(uint256 quesId, address indexed admin);
+    event NewQuestion(uint256 quesId, address indexed admin);
     event NewAnswerAdded(uint256 indexed quesId, uint256 ansId);
-    event PredictionAnswerVoted(uint256 indexed quesId, address indexed user, uint256 answerIdx);
+    event QuestionAnswerVoted(uint256 indexed quesId, address indexed user, uint256 answerIdx);
     event PendingValidAnswer(uint256 quesId);
     event PendingAnswerValidated(uint256 quesId);
 
@@ -64,14 +64,14 @@ contract QuestionManager is AccessManaged {
             require(answerBytes >= minStringBytes  && answerBytes <= 32, "Invalid answer length");
         }
 
-        Question storage ques = questions[totalPredictions];
+        Question storage ques = questions[totalQuestions];
         ques.question = _question;
         ques.answers = _someAnswers;
         ques.deadline = block.timestamp + _duration;
         ques.validAnswer.status = ValidAnswerStatus.ONGOING;
 
-        totalPredictions++;
-        emit NewPrediction(totalPredictions, msg.sender);
+        totalQuestions++;
+        emit NewQuestion(totalQuestions, msg.sender);
     }
 
     // To PREDICTER
@@ -87,7 +87,7 @@ contract QuestionManager is AccessManaged {
         hasPredicted[_quesId][msg.sender] = true;
         ques.predictions[_ansIdx].push(msg.sender);
 
-        emit PredictionAnswerVoted(_quesId, msg.sender, _ansIdx);
+        emit QuestionAnswerVoted(_quesId, msg.sender, _ansIdx);
     }
 
     // TODO: Let others pay to add a new answer
@@ -201,7 +201,7 @@ contract QuestionManager is AccessManaged {
     }
 
     function isValidQuestionId(uint256 _quesId) internal view returns (bool){
-        if (_quesId >= totalPredictions || _quesId < 0) return false;
+        if (_quesId >= totalQuestions || _quesId < 0) return false;
         return true;
     }
 
