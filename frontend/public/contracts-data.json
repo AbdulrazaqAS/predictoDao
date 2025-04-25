@@ -18,5 +18,10 @@
     "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
     "block": 4,
     "fee": "0.000473205901001641"
+  },
+  "PredictoDao": {
+    "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "block": 5,
+    "fee": "0.003765651422111832"
   }
 }

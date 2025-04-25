@@ -73,21 +73,22 @@ async function main() {
   console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
   console.log("Deployment fee:", deploymentnFee, "eth");
 
-  // const admins = [deployer];
-  // const requiredValidations = 3;
-  // const PredictoDao = await ethers.getContractFactory("PredictoAccessManager");
-  // const predictoDao = await PredictoDao.deploy(admins, requiredValidations);
-  // await predictoDao.waitForDeployment();
-  // txResponse = predictoDao.deploymentTransaction();
-  // txReceipt = await txResponse.wait();
-  // const token = txReceipt.contractAddress;
-  // deploymentBlock = txReceipt?.blockNumber;
-  // deploymentnFee = ethers.formatEther(txReceipt?.fee || 0);
-  // contractsData["PredictoAccessManager"] = {address: contractAddress, block: deploymentBlock, fee: deploymentnFee};
-  // console.log("\nPredictoAccessManager");
-  // console.log("Contract address:", contractAddress || "Error getting blocknunber");
-  // console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
-  // console.log("Deployment fee:", deploymentnFee, "eth");
+  const signers = await ethers.getSigners();
+  const admins = signers.slice(0, 5);
+  const requiredValidations = 3;
+  const PredictoDao = await ethers.getContractFactory("PredictoDao");
+  const predictoDao = await PredictoDao.deploy(admins, requiredValidations, token);
+  await predictoDao.waitForDeployment();
+  txResponse = predictoDao.deploymentTransaction();
+  txReceipt = await txResponse.wait();
+  const predictoDaoAddr = txReceipt.contractAddress;
+  deploymentBlock = txReceipt?.blockNumber;
+  deploymentnFee = ethers.formatEther(txReceipt?.fee || 0);
+  contractsData["PredictoDao"] = {address: predictoDaoAddr, block: deploymentBlock, fee: deploymentnFee};
+  console.log("\nPredictoDao");
+  console.log("Contract address:", predictoDaoAddr || "Error getting blocknunber");
+  console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
+  console.log("Deployment fee:", deploymentnFee, "eth");
 
   // Save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(contractsData);
