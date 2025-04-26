@@ -7,7 +7,7 @@ contract UserManager {
 
     event NewUser(address addr);
 
-    // TODO: pay or own tokens create
+    // TODO: pay or own tokens to create
     function createAccount() external {
         require(!isRegistered[msg.sender], "User already registered");
 

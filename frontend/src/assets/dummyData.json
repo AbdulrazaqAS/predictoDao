@@ -1,0 +1,163 @@
+[
+    {
+      "question": "Will ETH flip Bitcoin?",
+      "answers": ["Yes", "No", "Someday"],
+      "votes": [95, 70, 35],
+      "image": "https://source.unsplash.com/400x300/?ethereum,bitcoin",
+      "deadline": "2025-12-01T23:59:59Z",
+      "prizePool": 4.2
+    },
+    {
+      "question": "Is Dogecoin $1 possible?",
+      "answers": ["Yes", "No", "Elon Decides"],
+      "votes": [120, 60, 20],
+      "image": "https://source.unsplash.com/400x300/?dogecoin,crypto",
+      "deadline": "2025-11-15T23:59:59Z",
+      "prizePool": 3.8
+    },
+    {
+      "question": "Will Solana crash again?",
+      "answers": ["Yes", "No", "Not Sure"],
+      "votes": [90, 80, 30],
+      "image": "https://source.unsplash.com/400x300/?solana,crypto",
+      "deadline": "2025-10-10T23:59:59Z",
+      "prizePool": 4.0
+    },
+    {
+      "question": "Will NFTs come back?",
+      "answers": ["Yes", "No", "Never Left"],
+      "votes": [75, 95, 30],
+      "image": "https://source.unsplash.com/400x300/?nft,art",
+      "deadline": "2025-09-30T23:59:59Z",
+      "prizePool": 2.9
+    },
+    {
+      "question": "Is Bitcoin dead again?",
+      "answers": ["Yes", "No", "Never Dies"],
+      "votes": [100, 70, 20],
+      "image": "https://source.unsplash.com/400x300/?bitcoin,news",
+      "deadline": "2025-12-25T23:59:59Z",
+      "prizePool": 3.5
+    },
+    {
+      "question": "Will memecoins rule?",
+      "answers": ["Yes", "No", "Already Do"],
+      "votes": [80, 70, 50],
+      "image": "https://source.unsplash.com/400x300/?memecoin,crypto",
+      "deadline": "2025-08-20T23:59:59Z",
+      "prizePool": 3.3
+    },
+    {
+      "question": "Is XRP finally winning?",
+      "answers": ["Yes", "No", "Still Fighting"],
+      "votes": [85, 75, 40],
+      "image": "https://source.unsplash.com/400x300/?xrp,crypto",
+      "deadline": "2025-10-05T23:59:59Z",
+      "prizePool": 4.1
+    },
+    {
+      "question": "Will ETH gas fees drop?",
+      "answers": ["Yes", "No", "Never"],
+      "votes": [70, 90, 40],
+      "image": "https://source.unsplash.com/400x300/?ethereum,gas",
+      "deadline": "2025-09-10T23:59:59Z",
+      "prizePool": 2.7
+    },
+    {
+      "question": "Is Pepe Coin the next Doge?",
+      "answers": ["Yes", "No", "Too Soon"],
+      "votes": [60, 80, 60],
+      "image": "https://source.unsplash.com/400x300/?pepecoin,meme",
+      "deadline": "2025-11-01T23:59:59Z",
+      "prizePool": 3.6
+    },
+    {
+      "question": "Will crypto kill banks?",
+      "answers": ["Yes", "No", "Merge"],
+      "votes": [95, 85, 20],
+      "image": "https://source.unsplash.com/400x300/?crypto,bank",
+      "deadline": "2025-12-20T23:59:59Z",
+      "prizePool": 4.5
+    },
+    {
+      "question": "Will Bitcoin hit $1M?",
+      "answers": ["Yes", "No", "Later"],
+      "votes": [100, 70, 30],
+      "image": "https://source.unsplash.com/400x300/?bitcoin,million",
+      "deadline": "2025-12-31T23:59:59Z",
+      "prizePool": 6.0
+    },
+    {
+      "question": "Is blockchain overrated?",
+      "answers": ["Yes", "No", "Unsure"],
+      "votes": [60, 100, 40],
+      "image": "https://source.unsplash.com/400x300/?blockchain,technology",
+      "deadline": "2025-10-30T23:59:59Z",
+      "prizePool": 3.4
+    },
+    {
+      "question": "Will Shiba hit $0.01?",
+      "answers": ["Yes", "No", "Impossible"],
+      "votes": [90, 70, 40],
+      "image": "https://source.unsplash.com/400x300/?shibacoin,crypto",
+      "deadline": "2025-11-25T23:59:59Z",
+      "prizePool": 3.1
+    },
+    {
+      "question": "Is Bitcoin mining green?",
+      "answers": ["Yes", "No", "Becoming"],
+      "votes": [65, 90, 45],
+      "image": "https://source.unsplash.com/400x300/?bitcoin,mining",
+      "deadline": "2025-08-31T23:59:59Z",
+      "prizePool": 4.7
+    },
+    {
+      "question": "Will USDT collapse?",
+      "answers": ["Yes", "No", "Partial"],
+      "votes": [80, 85, 35],
+      "image": "https://source.unsplash.com/400x300/?usdt,tether",
+      "deadline": "2025-09-15T23:59:59Z",
+      "prizePool": 5.0
+    },
+    {
+      "question": "Is SBF guilty?",
+      "answers": ["Yes", "No", "Free Sam"],
+      "votes": [100, 60, 40],
+      "image": "https://source.unsplash.com/400x300/?sbf,ftx",
+      "deadline": "2025-10-05T23:59:59Z",
+      "prizePool": 5.2
+    },
+    {
+      "question": "Will CBDCs rule crypto?",
+      "answers": ["Yes", "No", "Both Exist"],
+      "votes": [85, 65, 50],
+      "image": "https://source.unsplash.com/400x300/?cbdc,crypto",
+      "deadline": "2025-11-30T23:59:59Z",
+      "prizePool": 4.4
+    },
+    {
+      "question": "Is Bitcoin gold 2.0?",
+      "answers": ["Yes", "No", "Better"],
+      "votes": [90, 70, 40],
+      "image": "https://source.unsplash.com/400x300/?bitcoin,gold",
+      "deadline": "2025-12-05T23:59:59Z",
+      "prizePool": 5.1
+    },
+    {
+      "question": "Will ETH 3.0 exist?",
+      "answers": ["Yes", "No", "2.0 Forever"],
+      "votes": [75, 85, 40],
+      "image": "https://source.unsplash.com/400x300/?ethereum,upgrade",
+      "deadline": "2025-09-25T23:59:59Z",
+      "prizePool": 3.7
+    },
+    {
+      "question": "Will whales pump Doge?",
+      "answers": ["Yes", "No", "Maybe"],
+      "votes": [100, 60, 40],
+      "image": "https://source.unsplash.com/400x300/?whale,dogecoin",
+      "deadline": "2025-11-20T23:59:59Z",
+      "prizePool": 3.9
+    }
+  ]
+  

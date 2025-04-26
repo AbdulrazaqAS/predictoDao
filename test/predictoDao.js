@@ -195,5 +195,29 @@ describe("Predicto", () => {
             const ques = await questionManager.questions(0);
             expect(ques.reward).to.equal(1000);
         });
+
+        /*
+        it("should allow updating and validating the correct answer", async () => {
+            const { questionManager, manager } = await loadFixture(deployQuestionManagerFixture);
+
+            await questionManager.connect(manager).newQuestion("Q?", ["A", "B"], 1, "url");
+
+            // Wait until deadline is passed
+            await ethers.provider.send("evm_increaseTime", [2]);
+            await ethers.provider.send("evm_mine");
+
+            await expect(
+            questionManager.connect(manager).updateValidAnswerToPending(0, 1, "B")
+            ).to.emit(questionManager, "PendingValidAnswer");
+
+            await expect(
+            questionManager.connect(manager).validatePendingAnswer(0)
+            ).to.emit(questionManager, "PendingAnswerValidated");
+
+            const valid = await questionManager.getQuestionValidAnswer(0);
+            expect(valid.status).to.equal(2); // VALIDATED
+        });
+        });
+        */
     });
 });
