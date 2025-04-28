@@ -11,6 +11,7 @@ import RolesSelector from "./RolesSelector";
 import PREDICTOTOKEN_ABI from "../assets/PredictoTokenABI.json";
 import QUESTION_MANAGER_ABI from "../assets/QuestionManagerABI.json";
 import USER_MANAGER_ABI from "../assets/UserManagerABI.json";
+import { ROLES } from "../utils";
 
 const SUDO_ADMIN = import.meta.env.VITE_SUDO_ADMIN;
 const MANAGER_ADDRESS = import.meta.env.VITE_MANAGER_ADDRESS;
@@ -18,7 +19,7 @@ const PREDICTOTOKEN_ADDRESS = import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
 const QUESTION_MANAGER_ADDRESS = import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
 const PREDICTODAO_ADDRESS = import.meta.env.VITE_PREDICTODAO_ADDRESS;
 
-export default function ManagerDashboard({ managerContract, signer }) {
+export default function ManagerDashboard({ managerContract, signer, signerRoles }) {
     const [grantAddress, setGrantAddress] = useState("");
     const [revokeAddress, setRevokeAddress] = useState("");
     const [roleToGrant, setRoleToGrant] = useState("");
@@ -26,6 +27,8 @@ export default function ManagerDashboard({ managerContract, signer }) {
     const [callTarget, setCallTarget] = useState("");
     const [callData, setCallData] = useState("");
     const [targets, setTargets] = useState([]);
+
+    const requiredRole = ROLES.ADMIN_ROLE;
 
     useEffect(() => {
         if (!managerContract) return;
@@ -38,8 +41,18 @@ export default function ManagerDashboard({ managerContract, signer }) {
         setTargets(targets);
     }, [managerContract]);
 
+    function hasRequiredRole() {
+        if (!signerRoles.includes(requiredRole)) {
+            toast.error("You don't have permission to perform this action.");
+            return false;
+        }
+        return true;
+    }
+
     async function handleGrantRole() {
-        if (!window.ethereum) {
+        if (!hasRequiredRole()) return;
+
+        if (!window.ethereum) {  // TODO: Use error bar
             toast.error("No wallet detected");
             return;
         }
@@ -71,6 +84,8 @@ export default function ManagerDashboard({ managerContract, signer }) {
     }
     
     async function handleRevokeRole() {
+        if (!hasRequiredRole()) return;
+
         if (!window.ethereum) {
             toast.error("No wallet detected");
             return;
@@ -104,6 +119,8 @@ export default function ManagerDashboard({ managerContract, signer }) {
     }
 
     async function handleExecuteCall() {
+        if (!hasRequiredRole()) return;
+
         if (!window.ethereum) {
             toast.error("No wallet detected");
             return;

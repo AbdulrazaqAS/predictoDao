@@ -9,12 +9,12 @@ import QUESTION_MANAGER_ABI from "./assets/QuestionManagerABI.json";
 import USER_MANAGER_ABI from "./assets/UserManagerABI.json";
 import PREDICTODAO_ABI from "./assets/PredictoDaoABI.json";
 import dummyData from "./assets/dummyData.json";
+import { ROLES } from "./utils";
 
 import QuestionCard from "./components/QuestionCard";
 import NavBar from "./components/NavBar";
-import QuestionManagerTab from "./components/QuestionManagerTab";
 import NoWalletDetected from "./components/NoWalletDetected";
-import AdminDashboard from "./components/AdminDashboard";
+import ContractsPage from "./components/ContractsPage";
 
 const HARDHAT_NETWORK_ID = '0x7A69' // 31337
 const SEPOLIA_NETWORK_ID = '0xAA36A7' // 11155111
@@ -30,12 +30,13 @@ export default function App() {
   const [provider, setProvider] = useState(null);
   const [walletDetected, setWalletDetected] = useState(true);
   const [signer, setSigner] = useState();
-  const [manager, setManager] = useState(null);
-  const [token, setToken] = useState(null);
-  const [questionManager, setQuestionManager] = useState(null);
-  const [userManager, setUserManager] = useState(null);
-  const [predictoDao, setPredictoDao] = useState(null);
+  const [managerContract, setManagerContract] = useState(null);
+  const [tokenContract, setTokenContract] = useState(null);
+  const [questionManagerContract, setQuestionManagerContract] = useState(null);
+  const [userManagerContract, setUserManagerContract] = useState(null);
+  const [daoContract, setDaoContract] = useState(null);
   const [page, setPage] = useState("home");
+  const [signerRoles, setSignerRoles] = useState([]);
 
   async function connectProvider() {
     try {
@@ -83,6 +84,32 @@ export default function App() {
     }
   }
 
+  async function getSignerRoles() {
+    const roles = [];
+    const rolesList = Object.values(ROLES);
+
+    for (const roleId of rolesList) {
+      const hasRole = await managerContract.hasRole(roleId, signer);
+      if (hasRole[0]) {
+        roles.push(roleId);
+      }
+    }
+
+    return roles;
+  }
+
+  useEffect(() => {
+    if (!signer) return;
+    getSignerRoles(signer).then(roles => {
+      setSignerRoles(roles);
+      const allRoles = Object.keys(ROLES);
+      const userRoles = allRoles.filter((value) => {  // Getting the readable roles names just to print them
+        return roles.includes(ROLES[value])
+      });
+      console.log("Signer roles:", userRoles);
+    }).catch(e => console.error("Error getting roles:", e));
+  }, [signer]);
+
   useEffect(() => {
     try {
       connectProvider();
@@ -111,56 +138,56 @@ export default function App() {
 
     contractDeployed(MANAGER_ADDRESS).then(deployed => {
       if (!deployed) {
-        console.error("Manager not deployed");
+        console.error("Manager contract not deployed");
         return;
       }
 
-      const manager = new ethers.Contract(MANAGER_ADDRESS, MANAGER_ABI, provider);
-      setManager(manager);
-      console.log("Manager set.");
+      const managerContract = new ethers.Contract(MANAGER_ADDRESS, MANAGER_ABI, provider);
+      setManagerContract(managerContract);
+      console.log("Manager contract set.");
     });
 
     contractDeployed(PREDICTOTOKEN_ADDRESS).then(deployed => {
       if (!deployed) {
-        console.error("Manager not deployed");
+        console.error("Token contract not deployed");
         return;
       }
 
-      const token = new ethers.Contract(PREDICTOTOKEN_ADDRESS, PREDICTOTOKEN_ABI, provider);
-      setToken(token);
-      console.log("Token set.");
+      const tokenContract = new ethers.Contract(PREDICTOTOKEN_ADDRESS, PREDICTOTOKEN_ABI, provider);
+      setTokenContract(tokenContract);
+      console.log("Token contract set.");
     });
 
     contractDeployed(QUESTION_MANAGER_ADDRESS).then(deployed => {
       if (!deployed) {
-        console.error("Manager not deployed");
+        console.error("Question manager contract not deployed");
         return;
       }
 
-      const questionManager = new ethers.Contract(QUESTION_MANAGER_ADDRESS, QUESTION_MANAGER_ABI, provider);
-      setQuestionManager(questionManager);
+      const questionManagerContract = new ethers.Contract(QUESTION_MANAGER_ADDRESS, QUESTION_MANAGER_ABI, provider);
+      setQuestionManagerContract(questionManagerContract);
       console.log("Question manager set.");
     });
 
     contractDeployed(USER_MANAGER_ADDRESS).then(deployed => {
       if (!deployed) {
-        console.error("Manager not deployed");
+        console.error("User manager not deployed");
         return;
       }
 
-      const userManager = new ethers.Contract(USER_MANAGER_ADDRESS, USER_MANAGER_ABI, provider);
-      setUserManager(userManager);
+      const userManagerContract = new ethers.Contract(USER_MANAGER_ADDRESS, USER_MANAGER_ABI, provider);
+      setUserManagerContract(userManagerContract);
       console.log("User manager set.");
     });
 
     contractDeployed(PREDICTODAO_ADDRESS).then(deployed => {
       if (!deployed) {
-        console.error("Manager not deployed");
+        console.error("PredictoDao contract not deployed");
         return;
       }
 
-      const predictoDao = new ethers.Contract(PREDICTODAO_ADDRESS, PREDICTODAO_ABI, provider);
-      setPredictoDao(predictoDao);
+      const daoContract = new ethers.Contract(PREDICTODAO_ADDRESS, PREDICTODAO_ABI, provider);
+      setDaoContract(daoContract);
       console.log("PredictoDao set.");
     });
   }, [provider]);
@@ -179,11 +206,9 @@ export default function App() {
           </div>
         </div>
       }
-      {page === "new question" && <QuestionManagerTab />}
-      {page === "admins" && <AdminDashboard managerContract={manager} signer={signer} provider={provider} />}
       {page === "profile" && <div>Profile Page</div>}
       {page === "about" && <div>About Page</div>}
-      {page === "contract" && <div>Contract Details</div>}
+      {page === "contracts" && <ContractsPage managerContract={managerContract} signer={signer} signerRoles={signerRoles} />}
       <Toaster />
     </div>
   );

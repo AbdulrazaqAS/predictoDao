@@ -20,7 +20,7 @@ export default function NavBar({ setPage, signer, setSigner }) {
     setConnected(true);
   }, [signer]);
 
-  const navs = ["Home", "New Question", "Admins", "Profile", "About", "Contract"];
+  const navs = ["Home", "Contracts", "Profile", "About"];
 
   return (
     <nav className="flex justify-between items-center p-4 shadow-md bg-white fixed top-0 w-full z-10">
