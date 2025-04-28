@@ -15,7 +15,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
     const [targetFunctions, setTargetFunctions] = useState([]);
     const [functionRole, setFunctionRole] = useState("");
     const [roleIdToSetToFuncs, setRoleIdToSetToFuncs] = useState("");
-    const [newDelay, setNewDelay] = useState("");
+    const [newAdminDelay, setNewAdminDelay] = useState("");
     const [closeTarget, setCloseTarget] = useState(false);
     const [cancelCaller, setCancelCaller] = useState("");
     const [cancelData, setCancelData] = useState("");
@@ -30,13 +30,13 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
         const externalFuncs = targetABI
             .filter(item => item.type === "function" && item.stateMutability !== "view" && item.stateMutability !== "pure")
             .map(item => {
-                return({
+                return ({
                     name: item.name,
                     signature: `${item.name}(${item.inputs.map(i => i.type).join(",")})`
                 });
             }).map(item => {
                 const selector = ethers.id(item.signature).substring(0, 10);
-                return { ...item, selector}
+                return { ...item, selector }
             });
 
         setTargetFunctions(externalFuncs);
@@ -45,10 +45,11 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
     async function fetchTargetInfo() {
         try {
             const closed = await managerContract.isTargetClosed(targetAddress);
-            const delay = await managerContract.getTargetAdminDelay(targetAddress);
+            const delay = await managerContract.getTargetAdminDelay(targetAddress);  // Why is this not working?
 
             setIsClosed(closed);
             setAdminDelay(delay.toString());
+            console.log("Delay", delay)
         } catch (err) {
             console.error(err);
             toast.error("Failed to fetch target info");
@@ -88,8 +89,12 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
 
     async function handleSetAdminDelay() {
         try {
-            const tx = await managerContract.connect(signer).setTargetAdminDelay(targetAddress, newDelay);
-            await tx.wait();
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner(0);
+            const tx = await managerContract.connect(signer).setTargetAdminDelay(targetAddress, BigInt(newAdminDelay));
+            const r = await tx.wait();
+            console.log("Tx:", tx, "\n\nR", r);
+            console.log("Admin delay set to", BigInt(newAdminDelay));
             toast.success("Admin delay updated");
             fetchTargetInfo();
         } catch (err) {
@@ -100,6 +105,8 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
 
     async function handleSetTargetClosed() {
         try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner(0);
             const tx = await managerContract.connect(signer).setTargetClosed(targetAddress, closeTarget);
             await tx.wait();
             toast.success("Target closed state updated");
@@ -110,29 +117,33 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
         }
     }
 
-    async function handleCancelOperation() {
-        try {
-            const tx = await managerContract.connect(signer).cancel(cancelCaller, targetAddress, cancelData);
-            await tx.wait();
-            toast.success("Operation cancelled");
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to cancel operation");
-        }
-    }
+    // async function handleCancelOperation() {
+    //     try {
+    //         const provider = new ethers.BrowserProvider(window.ethereum);
+    //         const signer = await provider.getSigner(0);
+    //         const tx = await managerContract.connect(signer).cancel(cancelCaller, targetAddress, cancelData);
+    //         await tx.wait();
+    //         toast.success("Operation cancelled");
+    //     } catch (err) {
+    //         console.error(err);
+    //         toast.error("Failed to cancel operation");
+    //     }
+    // }
 
-    async function handleHashOperation() {
-        try {
-            const hash = await managerContract.hashOperation(cancelCaller, targetAddress, cancelData);
-            toast.success(`Operation Hash: ${hash}`);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to hash operation");
-        }
-    }
+    // async function handleHashOperation() {
+    //     try {
+    //         const hash = await managerContract.hashOperation(cancelCaller, targetAddress, cancelData);
+    //         toast.success(`Operation Hash: ${hash}`);
+    //     } catch (err) {
+    //         console.error(err);
+    //         toast.error("Failed to hash operation");
+    //     }
+    // }
 
     async function handleUpdateAuthority() {
         try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner(0);
             const tx = await managerContract.connect(signer).updateAuthority(targetAddress, newAuthority);
             await tx.wait();
             toast.success("Authority updated");
@@ -146,16 +157,15 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
         <div className="space-y-6">
             <h1 className="text-2xl font-bold">{targetName} Settings</h1>
 
-            <Card>
+            <Card className="py-4">
                 <CardContent className="space-y-3 px-4">
                     <h2 className="text-xl font-semibold">Target Info</h2>
                     <p>Is Closed: {isClosed ? "Yes" : "No"}</p>
-                    <p>Admin Delay: {adminDelay} seconds</p>
                     <Button onClick={fetchTargetInfo}>Refresh Info</Button>
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="py-4">
                 <CardContent className="space-y-3 px-4">
                     <h2 className="text-xl font-semibold">Get Function Role</h2>
                     <Input
@@ -183,7 +193,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="py-4">
                 <CardContent className="space-y-3 px-4">
                     <h2 className="text-xl font-semibold">Set Functions Role</h2>
                     <h2 className="text-md font-semibold">Role</h2>
@@ -201,7 +211,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
                                     onChange={e => {
                                         const checked = e.target.checked;
                                         const value = e.target.value;
-                                        setFunctionsToSetRole(prev =>{
+                                        setFunctionsToSetRole(prev => {
                                             return checked ? [...prev, e.target.value] : prev.filter(f => f != value)
                                         })
                                     }}
@@ -214,19 +224,23 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="py-4">
                 <CardContent className="space-y-3 px-4">
                     <h2 className="text-xl font-semibold">Set Admin Delay</h2>
                     <Input
                         placeholder="New delay (seconds)"
-                        value={newDelay}
-                        onChange={(e) => setNewDelay(e.target.value)}
+                        type="number"
+                        value={newAdminDelay}
+                        min="0"
+                        onChange={(e) => setNewAdminDelay(e.target.value)}
                     />
                     <Button onClick={handleSetAdminDelay}>Update Delay</Button>
+                    <p className="text-sm">Current Delay: {adminDelay} seconds</p>
                 </CardContent>
             </Card>
-
-            <Card>
+            
+            {/* TODO: Disable all buttons when closed */}
+            <Card className="py-4">
                 <CardContent className="space-y-3 px-4">
                     <h2 className="text-xl font-semibold">Close or Open Target</h2>
                     <label className="flex items-center space-x-2">
@@ -238,10 +252,11 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
                         <span>Close Target?</span>
                     </label>
                     <Button onClick={handleSetTargetClosed}>Update Status</Button>
+                    <p className="text-sm">Is Closed: {isClosed ? "Yes" : "No"}</p>
                 </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
                 <CardContent className="space-y-3 px-4">
                     <h2 className="text-xl font-semibold">Cancel Operation</h2>
                     <Input
@@ -254,12 +269,14 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
                         value={cancelData}
                         onChange={(e) => setCancelData(e.target.value)}
                     />
-                    <Button onClick={handleCancelOperation}>Cancel</Button>
-                    <Button onClick={handleHashOperation}>Hash Operation</Button>
+                    <div className="space-x-3">
+                        <Button onClick={handleCancelOperation}>Cancel</Button>
+                        <Button onClick={handleHashOperation}>Hash Operation</Button>
+                    </div>
                 </CardContent>
-            </Card>
+            </Card> */}
 
-            <Card>
+            <Card className="py-4">
                 <CardContent className="space-y-3 px-4">
                     <h2 className="text-xl font-semibold">Update Authority</h2>
                     <Input

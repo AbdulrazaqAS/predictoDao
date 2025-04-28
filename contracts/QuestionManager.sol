@@ -52,6 +52,7 @@ contract QuestionManager is AccessManaged {
 
     // TODO: others can pay to add
     // TODO: Prevent same question multiple times
+    // TODO: Have a static add question btn in the home page (only QUESTION_MANAGER can add but it should be visible to all)
     // To QUESTION_MANAGER
     function newQuestion(string memory _question, string[] memory _someAnswers, uint256 _duration, string memory imageUrl) external restricted {
         require(_duration >= minDuration, "Duration must be greater than minDuration");

@@ -122,7 +122,7 @@ export default function ManagerDashboard({ managerContract, signer }) {
     return (
         <div className="grid gap-6 p-4 max-w-3xl mx-auto">
             <h1 className="text-2xl font-bold">Manager Settings</h1>
-            <Card>
+            <Card className="py-4">
                 <CardContent className="px-4">
                     <h2 className="text-xl font-bold mb-2">Grant Role</h2>
                     <Input
@@ -150,7 +150,7 @@ export default function ManagerDashboard({ managerContract, signer }) {
                 </CardContent>
             </Card>
             
-            <Card>
+            <Card className="py-4">
                 <CardContent className="px-4">
                     <h2 className="text-xl font-bold mb-2">Revoke Role</h2>
                     <Input

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
 export default function NewQuestionTab() {
     const [question, setQuestion] = useState("");
     const [answers, setAnswers] = useState([""]);
@@ -91,104 +96,108 @@ export default function NewQuestionTab() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-6 bg-white shadow-2xl mb-3 rounded-2xl space-y-6">
-            <h2 className="text-xl font-semibold text-gray-800">Create New Question</h2>
+        <Card className="py-4 bg-white rounded-2xl w-full md:w-3/5">
+            <CardContent className="px-4">
+                <form onSubmit={handleSubmit} className="space-y-3">
+                    <h2 className="text-xl font-semibold text-gray-800">Create New Question</h2>
 
-            {/* Image Upload */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="block border rounded p-2 w-full"
-                    required
-                />
-            </div>
+                    {/* Image Upload */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="block border rounded p-2 w-full"
+                            required
+                        />
+                    </div>
 
-            {/* Question */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Question ({question.length}/{MAX_QUESTION_LEN})</label>
-                <input
-                    type="text"
-                    value={question}
-                    maxLength={MAX_QUESTION_LEN}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    required
-                    className="w-full p-2 border rounded"
-                />
-            </div>
+                    {/* Question */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Question ({question.length}/{MAX_QUESTION_LEN})</label>
+                        <input
+                            type="text"
+                            value={question}
+                            maxLength={MAX_QUESTION_LEN}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            required
+                            className="w-full p-2 border rounded"
+                        />
+                    </div>
 
-            {/* Answers */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Answers ({answers[focusedAnswer].length}/{MAX_ANSWER_LEN})</label>
-                {answers.map((answer, idx) => (
-                    <input
-                        key={idx}
-                        type="text"
-                        value={answer}
-                        onChange={(e) => handleAnswerChange(idx, e.target.value)}
-                        onFocus={() => setFocusedAnswer(idx)}
-                        maxLength={MAX_ANSWER_LEN}
-                        required
-                        className="w-full mb-2 p-2 border rounded"
-                        placeholder={`Answer ${idx + 1}`}
-                    />
-                ))}
-                <button
-                    type="button"
-                    onClick={addAnswerField}
-                    className="text-sm text-blue-600 hover:underline mt-1"
-                >
-                    + Add Another Answer
-                </button>
-            </div>
+                    {/* Answers */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Answers ({answers[focusedAnswer].length}/{MAX_ANSWER_LEN})</label>
+                        {answers.map((answer, idx) => (
+                            <input
+                                key={idx}
+                                type="text"
+                                value={answer}
+                                onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                                onFocus={() => setFocusedAnswer(idx)}
+                                maxLength={MAX_ANSWER_LEN}
+                                required
+                                className="w-full mb-2 p-2 border rounded"
+                                placeholder={`Answer ${idx + 1}`}
+                            />
+                        ))}
+                        <button
+                            type="button"
+                            onClick={addAnswerField}
+                            className="text-sm text-blue-600 hover:underline mt-1"
+                        >
+                            + Add Another Answer
+                        </button>
+                    </div>
 
-            {/* Deadline */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
-                <input
-                    type="datetime-local"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    required
-                    className="w-full p-2 border rounded"
-                />
-            </div>
+                    {/* Deadline */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                        <input
+                            type="datetime-local"
+                            value={deadline}
+                            onChange={(e) => setDeadline(e.target.value)}
+                            required
+                            className="w-full p-2 border rounded"
+                        />
+                    </div>
 
-            {/* Optional Prize */}
-            <div className="flex items-center space-x-3">
-                <label className="text-sm font-medium text-gray-700">Prize?</label>
-                <input
-                    type="checkbox"
-                    checked={hasPrize}
-                    onChange={() => setHasPrize(!hasPrize)}
-                    className="h-4 w-4"
-                />
-            </div>
-            {hasPrize && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Prize Amount (ETH)</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={prize}
-                        onChange={(e) => setPrize(e.target.value)}
-                        required
-                        className="w-full p-2 border rounded"
-                    />
-                </div>
-            )}
+                    {/* Optional Prize */}
+                    <div className="flex items-center space-x-3">
+                        <label className="text-sm font-medium text-gray-700">Prize?</label>
+                        <input
+                            type="checkbox"
+                            checked={hasPrize}
+                            onChange={() => setHasPrize(!hasPrize)}
+                            className="h-4 w-4"
+                        />
+                    </div>
+                    {hasPrize && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Prize Amount (ETH)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={prize}
+                                onChange={(e) => setPrize(e.target.value)}
+                                required
+                                className="w-full p-2 border rounded"
+                            />
+                        </div>
+                    )}
 
-            {/* Submit */}
-            <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-800 transition disabled:bg-gray-500 disabled:cursor-not-allowed"
-                disabled={isUploading || isCreating}
-            >
-                {isUploading ? "Uploading to IPFS" : isCreating ? "Creating..." : "Submit Question"}
-            </button>
-        </form>
+                    {/* Submit */}
+                    <Button
+                        type="submit"
+                        className="w-full hover:bg-gray-800 transition disabled:bg-gray-600 disabled:cursor-not-allowed"
+                        disabled={isUploading || isCreating}
+                    >
+                        {isUploading ? "Uploading to IPFS" : isCreating ? "Creating..." : "Submit Question"}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     );
 }

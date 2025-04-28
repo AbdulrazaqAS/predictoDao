@@ -12,7 +12,7 @@ import dummyData from "./assets/dummyData.json";
 
 import QuestionCard from "./components/QuestionCard";
 import NavBar from "./components/NavBar";
-import NewQuestionTab from "./components/NewQuestionTab";
+import QuestionManagerTab from "./components/QuestionManagerTab";
 import NoWalletDetected from "./components/NoWalletDetected";
 import AdminDashboard from "./components/AdminDashboard";
 
@@ -179,7 +179,7 @@ export default function App() {
           </div>
         </div>
       }
-      {page === "new question" && <NewQuestionTab />}
+      {page === "new question" && <QuestionManagerTab />}
       {page === "admins" && <AdminDashboard managerContract={manager} signer={signer} provider={provider} />}
       {page === "profile" && <div>Profile Page</div>}
       {page === "about" && <div>About Page</div>}

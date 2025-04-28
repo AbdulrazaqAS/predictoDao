@@ -43,6 +43,7 @@ export default function AdminDashboard({ managerContract, signer, provider }) {
     return (
         <div>
             {signerRoles.includes(ROLES.ADMIN_ROLE) && <ManagerDashboard managerContract={managerContract} signer={signer} provider={provider}/>}
+            
         </div>
     );
 }
