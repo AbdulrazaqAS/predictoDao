@@ -27,6 +27,8 @@ async function main() {
   const deployerBal = await deployer.provider.getBalance(deployerAddress);
   console.log("Deployer balance:", ethers.formatEther(deployerBal), "eth");
   
+  // TODO: Convert each deployment to a function and call them using then()
+  
   const PredictoAccessManager = await ethers.getContractFactory("PredictoAccessManager");
   const predictoAccessManager = await PredictoAccessManager.deploy(deployer);
   await predictoAccessManager.waitForDeployment();
@@ -38,7 +40,7 @@ async function main() {
   contractsData["PredictoAccessManager"] = {address: manager, block: deploymentBlock, fee: deploymentnFee};
   console.log("\nPredictoAccessManager");
   console.log("Contract address:", manager || "Error getting blocknunber");
-  console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
+  console.log("Deployment block number:", deploymentBlock || "Error getting address");
   console.log("Deployment fee:", deploymentnFee, "eth");
   
   const PredictoToken = await ethers.getContractFactory("PredictoToken");
@@ -51,7 +53,7 @@ async function main() {
   deploymentnFee = ethers.formatEther(txReceipt?.fee || 0);
   contractsData["PredictoToken"] = {address: token, block: deploymentBlock, fee: deploymentnFee};
   console.log("\nPredictoToken");
-  console.log("Contract address:", token || "Error getting blocknunber");
+  console.log("Contract address:", token || "Error getting address");
   console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
   console.log("Deployment fee:", deploymentnFee, "eth");
   
@@ -65,7 +67,7 @@ async function main() {
   deploymentnFee = ethers.formatEther(txReceipt?.fee || 0);
   contractsData["QuestionManager"] = {address: questionManagerAddr, block: deploymentBlock, fee: deploymentnFee};
   console.log("\nQuestionManager");
-  console.log("Contract address:", questionManagerAddr || "Error getting blocknunber");
+  console.log("Contract address:", questionManagerAddr || "Error getting address");
   console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
   console.log("Deployment fee:", deploymentnFee, "eth");
   
@@ -79,13 +81,13 @@ async function main() {
   deploymentnFee = ethers.formatEther(txReceipt?.fee || 0);
   contractsData["UserManager"] = {address: userManagerAddr, block: deploymentBlock, fee: deploymentnFee};
   console.log("\nUserManager");
-  console.log("Contract address:", userManagerAddr || "Error getting blocknunber");
+  console.log("Contract address:", userManagerAddr || "Error getting address");
   console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
   console.log("Deployment fee:", deploymentnFee, "eth");
 
   const signers = await ethers.getSigners();
   const admins = signers.slice(0, 5);
-  const requiredValidations = 3;
+  const requiredValidations = 1;  // set to 1 for a live network or add more signers in hardhat config
   const PredictoDao = await ethers.getContractFactory("PredictoDao");
   const predictoDao = await PredictoDao.deploy(admins, requiredValidations, token);
   await predictoDao.waitForDeployment();
@@ -96,6 +98,7 @@ async function main() {
   deploymentnFee = ethers.formatEther(txReceipt?.fee || 0);
   contractsData["PredictoDao"] = {address: predictoDaoAddr, block: deploymentBlock, fee: deploymentnFee};
   console.log("\nPredictoDao");
+  // console.log("Contract address:", predictoDao.target || "Error getting address");
   console.log("Contract address:", predictoDaoAddr || "Error getting blocknunber");
   console.log("Deployment block number:", deploymentBlock || "Error getting blocknumber");
   console.log("Deployment fee:", deploymentnFee, "eth");
@@ -106,7 +109,7 @@ async function main() {
 
 function saveFrontendFiles(contractsData) {
   const fs = require("fs");
-  const contractsDir = path.join(__dirname, "..", "frontend", "public");
+  const contractsDir = path.join(__dirname, "..", "frontend", "src", "assets");
   
   if (!fs.existsSync(contractsDir)) {
     fs.mkdirSync(contractsDir);

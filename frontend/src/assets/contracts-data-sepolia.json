@@ -1,0 +1,27 @@
+{
+  "PredictoAccessManager": {
+    "address": "0xbab4178073e315Ae5A2c21CfFE0FAB865238D766",
+    "block": 8215883,
+    "fee": "0.000000869528069955"
+  },
+  "PredictoToken": {
+    "address": "0x56f5C19ec2fC02378e3B1F10D27dE6c80d219202",
+    "block": 8215884,
+    "fee": "0.00000049749148488"
+  },
+  "QuestionManager": {
+    "address": "0x914C1f7eAA270684D3090c6Cb75d6bd47df5fc1d",
+    "block": 8215886,
+    "fee": "0.000003927747966603"
+  },
+  "UserManager": {
+    "address": "0x2b35464332b19D6EdDccA77c3c765BBbf6886C30",
+    "block": 8215890,
+    "fee": "0.000000064350096239"
+  },
+  "PredictoDao": {
+    "address": "0x1659b829e5A8196f1E05063F889f7D9f7469BfaB",
+    "block": 8215892,
+    "fee": "0.000002296310645952"
+  }
+}

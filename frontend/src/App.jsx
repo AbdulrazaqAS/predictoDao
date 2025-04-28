@@ -19,12 +19,15 @@ import ContractsPage from "./components/ContractsPage";
 const HARDHAT_NETWORK_ID = '0x7A69' // 31337
 const SEPOLIA_NETWORK_ID = '0xAA36A7' // 11155111
 
-const SUDO_ADMIN = import.meta.env.VITE_SUDO_ADMIN;
-const MANAGER_ADDRESS = import.meta.env.VITE_MANAGER_ADDRESS;
-const PREDICTOTOKEN_ADDRESS = import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
-const QUESTION_MANAGER_ADDRESS = import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
-const USER_MANAGER_ADDRESS = import.meta.env.VITE_USER_MANAGER_ADDRESS;
-const PREDICTODAO_ADDRESS = import.meta.env.VITE_PREDICTODAO_ADDRESS;
+ALCHEMY_ENDPOINT_PREFIX = 'https://eth-sepolia.g.alchemy.com/v2/';
+
+const isHardhat = import.meta.env.VITE_IS_HARDHAT === 'true';
+const SUDO_ADMIN = isHardhat ? import.meta.env.VITE_SUDO_ADMIN_HardHat : import.meta.env.VITE_SUDO_ADMIN;
+const MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_MANAGER_ADDRESS;
+const PREDICTOTOKEN_ADDRESS = isHardhat ? import.meta.env.VITE_PREDICTOTOKEN_ADDRESS_HardHat : import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
+const QUESTION_MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_QUESTION_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
+const USER_MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_USER_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_USER_MANAGER_ADDRESS;
+const PREDICTODAO_ADDRESS = isHardhat ? import.meta.env.VITE_PREDICTODAO_ADDRESS_HardHat : import.meta.env.VITE_PREDICTODAO_ADDRESS;
 
 export default function App() {
   const [provider, setProvider] = useState(null);
