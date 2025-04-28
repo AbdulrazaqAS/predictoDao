@@ -1,6 +1,10 @@
+import { useId } from "react";
 import { ROLES } from "../utils";
 
 export default function RolesSelector({ selected, onSelected }) {
+    const internalId = useId();
+    const radioGroup = `roles-${internalId}`;
+
     return (
         <div className="flex flex-wrap text-sm gap-2 mt-2">
             {Object.keys(ROLES).map((role, idx) => (
@@ -8,7 +12,7 @@ export default function RolesSelector({ selected, onSelected }) {
                     <input
                         type="radio"
                         className="mr-1"
-                        name="roles"
+                        name={radioGroup}
                         value={ROLES[role].toString()}
                         checked={selected === ROLES[role].toString()}
                         onChange={e => {

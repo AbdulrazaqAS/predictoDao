@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ethers } from "ethers";
 
 import TargetSettingsPage from "./TargetSettingsPage";
-import { ROLES } from "../utils";
+import RolesSelector from "./RolesSelector";
 
 import PREDICTOTOKEN_ABI from "../assets/PredictoTokenABI.json";
 import QUESTION_MANAGER_ABI from "../assets/QuestionManagerABI.json";
@@ -19,15 +19,12 @@ const QUESTION_MANAGER_ADDRESS = import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
 const PREDICTODAO_ADDRESS = import.meta.env.VITE_PREDICTODAO_ADDRESS;
 
 export default function ManagerDashboard({ managerContract, signer }) {
-    const [authority, setAuthority] = useState("");
-    const [newAuthority, setNewAuthority] = useState("");
     const [grantAddress, setGrantAddress] = useState("");
     const [revokeAddress, setRevokeAddress] = useState("");
-    const [roleToGrant, setRoleToGrant] = useState(null);
-    const [roleToRevoke, setRoleToRevoke] = useState(null);
+    const [roleToGrant, setRoleToGrant] = useState("");
+    const [roleToRevoke, setRoleToRevoke] = useState("");
     const [callTarget, setCallTarget] = useState("");
     const [callData, setCallData] = useState("");
-    const [closeQuestionId, setCloseQuestionId] = useState("");
     const [targets, setTargets] = useState([]);
 
     useEffect(() => {
@@ -133,7 +130,7 @@ export default function ManagerDashboard({ managerContract, signer }) {
                         value={grantAddress}
                         onChange={(e) => setGrantAddress(e.target.value)}
                     />
-                    <div className="flex flex-wrap text-sm gap-2 mt-2">
+                    {/* <div className="flex flex-wrap text-sm gap-2 mt-2">
                         {Object.keys(ROLES).map((role, idx) => (
                             <label key={idx}>
                                 <input
@@ -147,7 +144,8 @@ export default function ManagerDashboard({ managerContract, signer }) {
                                 {role}
                             </label>
                         ))}
-                    </div>
+                    </div> */}
+                    <RolesSelector selected={roleToGrant} onSelected={setRoleToGrant} />
                     <Button className="mt-2" onClick={handleGrantRole}>Grant</Button>
                 </CardContent>
             </Card>
@@ -160,7 +158,7 @@ export default function ManagerDashboard({ managerContract, signer }) {
                         value={revokeAddress}
                         onChange={(e) => setRevokeAddress(e.target.value)}
                     />
-                    <div className="flex flex-wrap text-sm gap-2 mt-2">
+                    {/* <div className="flex flex-wrap text-sm gap-2 mt-2">
                         {Object.keys(ROLES).map((role, idx) => (
                             <label key={idx}>
                                 <input
@@ -174,7 +172,8 @@ export default function ManagerDashboard({ managerContract, signer }) {
                                 {role}
                             </label>
                         ))}
-                    </div>
+                    </div> */}
+                    <RolesSelector selected={roleToRevoke} onSelected={setRoleToRevoke} />
                     <Button className="mt-2" onClick={handleRevokeRole}>Revoke</Button>
                 </CardContent>
             </Card>
