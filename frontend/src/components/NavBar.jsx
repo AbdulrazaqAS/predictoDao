@@ -1,18 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function NavBar({ setPage }) {
+export default function NavBar({ setPage, signer, setSigner }) {
   const [connected, setConnected] = useState(false);
-  const [account, setAccount] = useState("");
 
   const connectWallet = async () => {
     if (window.ethereum) {
+
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      setAccount(accounts[0]);
+      setSigner(accounts[0]);
       setConnected(true);
     } else {
       alert("MetaMask not detected");
     }
   };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setConnected(true);
+  }, [signer]);
 
   const navs = ["Home", "New Question", "Admins", "Profile", "About", "Contract"];
 
@@ -37,7 +43,7 @@ export default function NavBar({ setPage }) {
       {/* Connect Wallet */}
       <div>
         {connected ? (
-          <span className="text-sm text-green-600 font-mono truncate max-w-[150px]">{account}</span>
+          <span className="text-sm text-green-600 font-mono truncate max-w-[150px]">{signer}</span>
         ) : (
           <button
             onClick={connectWallet}

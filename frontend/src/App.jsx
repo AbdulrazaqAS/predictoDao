@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { changeToNetwork } from "./utils";
+import { Toaster, toast } from 'sonner';
 
 import MANAGER_ABI from "./assets/PredictoAccessManagerABI.json";
 import PREDICTOTOKEN_ABI from "./assets/PredictoTokenABI.json";
@@ -13,19 +14,22 @@ import QuestionCard from "./components/QuestionCard";
 import NavBar from "./components/NavBar";
 import NewQuestionTab from "./components/NewQuestionTab";
 import NoWalletDetected from "./components/NoWalletDetected";
+import AdminDashboard from "./components/AdminDashboard";
 
 const HARDHAT_NETWORK_ID = '0x7A69' // 31337
 const SEPOLIA_NETWORK_ID = '0xAA36A7' // 11155111
 
-const MANAGER_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-const PREDICTOTOKEN_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
-const QUESTION_MANAGER_ADDRESS = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
-const USER_MANAGER_ADDRESS = '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9';
-const PREDICTODAO_ADDRESS = '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9';
+const SUDO_ADMIN = import.meta.env.VITE_SUDO_ADMIN;
+const MANAGER_ADDRESS = import.meta.env.VITE_MANAGER_ADDRESS;
+const PREDICTOTOKEN_ADDRESS = import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
+const QUESTION_MANAGER_ADDRESS = import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
+const USER_MANAGER_ADDRESS = import.meta.env.VITE_USER_MANAGER_ADDRESS;
+const PREDICTODAO_ADDRESS = import.meta.env.VITE_PREDICTODAO_ADDRESS;
 
 export default function App() {
   const [provider, setProvider] = useState(null);
   const [walletDetected, setWalletDetected] = useState(true);
+  const [signer, setSigner] = useState();
   const [manager, setManager] = useState(null);
   const [token, setToken] = useState(null);
   const [questionManager, setQuestionManager] = useState(null);
@@ -163,7 +167,7 @@ export default function App() {
 
   return (
     <div className="pt-20">
-      <NavBar setPage={setPage} />
+      <NavBar setPage={setPage} signer={signer} setSigner={setSigner} />
       {!walletDetected && <NoWalletDetected setWalletDetected={setWalletDetected} />}
       {page === "home" &&
         <div className="px-4 py-2">
@@ -176,10 +180,11 @@ export default function App() {
         </div>
       }
       {page === "new question" && <NewQuestionTab />}
-      {page === "admins" && <div>Admins Section</div>}
+      {page === "admins" && <AdminDashboard managerContract={manager} signer={signer} provider={provider} />}
       {page === "profile" && <div>Profile Page</div>}
       {page === "about" && <div>About Page</div>}
       {page === "contract" && <div>Contract Details</div>}
+      <Toaster />
     </div>
   );
 }

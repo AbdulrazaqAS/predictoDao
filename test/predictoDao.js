@@ -5,7 +5,7 @@ describe("Predicto", () => {
     const MINTER = 1n;
     const PREDICTER = 2n;
     const QUESTION_MANAGER = 3n;
-    const FUNDS_MANAGER = 3n;
+    const FUNDS_MANAGER = 4n;
 
     async function deployManagerFixture() {
         const [initialAdmin] = await ethers.getSigners();

@@ -1,3 +1,11 @@
+export const ROLES = {
+	ADMIN_ROLE: 0n,
+	MINTER: 1n,
+    PREDICTER: 2n,
+    QUESTION_MANAGER: 3n,
+    FUNDS_MANAGER: 4n,
+};
+
 export async function changeToNetwork(networkId){
     if (window.ethereum.networkVersion !== networkId) {
         try {
