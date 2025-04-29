@@ -13,14 +13,8 @@ import QUESTION_MANAGER_ABI from "../assets/QuestionManagerABI.json";
 import USER_MANAGER_ABI from "../assets/UserManagerABI.json";
 import { ROLES } from "../utils";
 
-const isHardhat = import.meta.env.VITE_IS_HARDHAT === 'true';
-const SUDO_ADMIN = isHardhat ? import.meta.env.VITE_SUDO_ADMIN_HardHat : import.meta.env.VITE_SUDO_ADMIN;
-const MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_MANAGER_ADDRESS;
-const PREDICTOTOKEN_ADDRESS = isHardhat ? import.meta.env.VITE_PREDICTOTOKEN_ADDRESS_HardHat : import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
-const QUESTION_MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_QUESTION_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
-const USER_MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_USER_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_USER_MANAGER_ADDRESS;
-const PREDICTODAO_ADDRESS = isHardhat ? import.meta.env.VITE_PREDICTODAO_ADDRESS_HardHat : import.meta.env.VITE_PREDICTODAO_ADDRESS;
-
+const PREDICTOTOKEN_ADDRESS = import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
+const QUESTION_MANAGER_ADDRESS = import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
 
 export default function ManagerDashboard({ managerContract, signer, signerRoles }) {
     const [grantAddress, setGrantAddress] = useState("");
@@ -216,18 +210,16 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
                 </CardContent>
             </Card> */}
 
-            {signer &&
-                targets.map((target, idx) => (
-                    <TargetSettingsPage
-                        key={idx}
-                        managerContract={managerContract}
-                        targetAddress={target.address}
-                        targetName={target.name}
-                        targetABI={target.abi}
-                        signer={signer}
-                    />
-                ))
-            }
+            {targets.map((target, idx) => (
+                <TargetSettingsPage
+                    key={idx}
+                    managerContract={managerContract}
+                    targetAddress={target.address}
+                    targetName={target.name}
+                    targetABI={target.abi}
+                    signer={signer}
+                />
+            ))}
         </div>
     );
 }

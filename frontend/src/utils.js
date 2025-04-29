@@ -6,27 +6,29 @@ export const ROLES = {
     FUNDS_MANAGER: 4n,
 };
 
-export async function changeToNetwork(networkId){
-    if (window.ethereum.networkVersion !== networkId) {
-        try {
-			// const networkIdHex = `0x${networkId.toString(16)}`;
-			const networkIdHex = networkId;
-			await window.ethereum.request({
-				method: "wallet_switchEthereumChain",
-				params: [{chainId: networkIdHex}]
-			});
-		} catch (error) {
-			let msg = "";
-			if (error.code === 4902) {
-				msg = `Network ${chainId} not found, please add it to your wallet. Or switch to it manually.`
-			} else if (error.code === 4001) {
-				msg = "User rejected request."
-			} else {
-				msg = "Error switching network.";
-			}
+export function isNetwork(networkId){
+	return window.ethereum.networkVersion === networkId;
+}
 
-			console.error(msg, error);
-			// setWalletError(msg);
+export async function changeToNetwork(networkId){
+	try {
+		// const networkIdHex = `0x${networkId.toString(16)}`;
+		const networkIdHex = networkId;
+		await window.ethereum.request({
+			method: "wallet_switchEthereumChain",
+			params: [{chainId: networkIdHex}]
+		});
+	} catch (error) {
+		let msg = "";
+		if (error.code === 4902) {
+			msg = `Network ${chainId} not found, please add it to your wallet. Or switch to it manually.`
+		} else if (error.code === 4001) {
+			msg = "User rejected request."
+		} else {
+			msg = "Error switching network.";
 		}
-    }
+
+		console.error(msg, error);
+		// setWalletError(msg);
+	}
 }

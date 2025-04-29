@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { changeToNetwork } from "./utils";
+import { ROLES } from "./utils";
 import { Toaster, toast } from 'sonner';
 
 import MANAGER_ABI from "./assets/PredictoAccessManagerABI.json";
@@ -9,7 +9,6 @@ import QUESTION_MANAGER_ABI from "./assets/QuestionManagerABI.json";
 import USER_MANAGER_ABI from "./assets/UserManagerABI.json";
 import PREDICTODAO_ABI from "./assets/PredictoDaoABI.json";
 import dummyData from "./assets/dummyData.json";
-import { ROLES } from "./utils";
 
 import QuestionCard from "./components/QuestionCard";
 import NavBar from "./components/NavBar";
@@ -18,16 +17,15 @@ import ContractsPage from "./components/ContractsPage";
 
 const HARDHAT_NETWORK_ID = '0x7A69' // 31337
 const SEPOLIA_NETWORK_ID = '0xAA36A7' // 11155111
+const isHardhat = false;
 
-ALCHEMY_ENDPOINT_PREFIX = 'https://eth-sepolia.g.alchemy.com/v2/';
+const ALCHEMY_ENDPOINT_PREFIX = 'https://eth-sepolia.g.alchemy.com/v2/';
 
-const isHardhat = import.meta.env.VITE_IS_HARDHAT === 'true';
-const SUDO_ADMIN = isHardhat ? import.meta.env.VITE_SUDO_ADMIN_HardHat : import.meta.env.VITE_SUDO_ADMIN;
-const MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_MANAGER_ADDRESS;
-const PREDICTOTOKEN_ADDRESS = isHardhat ? import.meta.env.VITE_PREDICTOTOKEN_ADDRESS_HardHat : import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
-const QUESTION_MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_QUESTION_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
-const USER_MANAGER_ADDRESS = isHardhat ? import.meta.env.VITE_USER_MANAGER_ADDRESS_HardHat : import.meta.env.VITE_USER_MANAGER_ADDRESS;
-const PREDICTODAO_ADDRESS = isHardhat ? import.meta.env.VITE_PREDICTODAO_ADDRESS_HardHat : import.meta.env.VITE_PREDICTODAO_ADDRESS;
+const MANAGER_ADDRESS = import.meta.env.VITE_MANAGER_ADDRESS;
+const PREDICTOTOKEN_ADDRESS = import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
+const QUESTION_MANAGER_ADDRESS = import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
+const USER_MANAGER_ADDRESS = import.meta.env.VITE_USER_MANAGER_ADDRESS;
+const PREDICTODAO_ADDRESS = import.meta.env.VITE_PREDICTODAO_ADDRESS;
 
 export default function App() {
   const [provider, setProvider] = useState(null);
@@ -43,17 +41,21 @@ export default function App() {
 
   async function connectProvider() {
     try {
-      if (window.ethereum) {
+      if (isHardhat) {  // Hardhat Network
+        if (!window.ethereum) {
+          setWalletDetected(false);
+          throw new Error("No wallet detected");
+        }
+
         const provider = new ethers.BrowserProvider(window.ethereum);
-        changeToNetwork(HARDHAT_NETWORK_ID);
         const network = provider.getNetwork();
         network.then((val) => {
           setProvider(provider);
-          console.log("Metamask Network", val)
+          console.log("Metamask Hardhat Network", val)
         }).catch((error) => {
           throw error;
         });
-      } else {
+      } else {  // Sepolia Network
         const provider = new ethers.JsonRpcProvider(ALCHEMY_ENDPOINT_PREFIX + import.meta.env.VITE_ALCHEMY_API_KEY);
 
         const network = provider.getNetwork();
