@@ -7,7 +7,7 @@ import { ethers } from "ethers";
 import { ROLES } from "../utils";
 import RolesSelector from "./RolesSelector";
 
-export default function TargetSettingsPage({ managerContract, targetAddress, targetName, targetABI, signer }) {
+export default function TargetSettingsPage({ accessManagerContract, targetAddress, targetName, targetABI, signer }) {
     const [isClosed, setIsClosed] = useState(false);
     const [adminDelay, setAdminDelay] = useState("");
     const [functionToGetRole, setFunctionToGetRole] = useState("");
@@ -44,8 +44,8 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
 
     async function fetchTargetInfo() {
         try {
-            const closed = await managerContract.isTargetClosed(targetAddress);
-            const delay = await managerContract.getTargetAdminDelay(targetAddress);  // Why is this not working?
+            const closed = await accessManagerContract.isTargetClosed(targetAddress);
+            const delay = await accessManagerContract.getTargetAdminDelay(targetAddress);  // Why is this not working?
 
             setIsClosed(closed);
             setAdminDelay(delay.toString());
@@ -58,7 +58,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
 
     async function fetchFunctionRole() {
         try {
-            const roleId = await managerContract.getTargetFunctionRole(targetAddress, functionToGetRole);
+            const roleId = await accessManagerContract.getTargetFunctionRole(targetAddress, functionToGetRole);
             // TODO: use labelRole
             const rolesId = Object.values(ROLES);
             const roles = Object.keys(ROLES);
@@ -74,7 +74,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
-            const tx = await managerContract.connect(signer).setTargetFunctionRole(
+            const tx = await accessManagerContract.connect(signer).setTargetFunctionRole(
                 targetAddress,
                 functionsToSetRole,
                 roleIdToSetToFuncs
@@ -91,7 +91,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
-            const tx = await managerContract.connect(signer).setTargetAdminDelay(targetAddress, BigInt(newAdminDelay));
+            const tx = await accessManagerContract.connect(signer).setTargetAdminDelay(targetAddress, BigInt(newAdminDelay));
             const r = await tx.wait();
             console.log("Tx:", tx, "\n\nR", r);
             console.log("Admin delay set to", BigInt(newAdminDelay));
@@ -107,7 +107,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
-            const tx = await managerContract.connect(signer).setTargetClosed(targetAddress, closeTarget);
+            const tx = await accessManagerContract.connect(signer).setTargetClosed(targetAddress, closeTarget);
             await tx.wait();
             toast.success("Target closed state updated");
             fetchTargetInfo();
@@ -121,7 +121,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
     //     try {
     //         const provider = new ethers.BrowserProvider(window.ethereum);
     //         const signer = await provider.getSigner(0);
-    //         const tx = await managerContract.connect(signer).cancel(cancelCaller, targetAddress, cancelData);
+    //         const tx = await accessManagerContract.connect(signer).cancel(cancelCaller, targetAddress, cancelData);
     //         await tx.wait();
     //         toast.success("Operation cancelled");
     //     } catch (err) {
@@ -132,7 +132,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
 
     // async function handleHashOperation() {
     //     try {
-    //         const hash = await managerContract.hashOperation(cancelCaller, targetAddress, cancelData);
+    //         const hash = await accessManagerContract.hashOperation(cancelCaller, targetAddress, cancelData);
     //         toast.success(`Operation Hash: ${hash}`);
     //     } catch (err) {
     //         console.error(err);
@@ -144,7 +144,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
-            const tx = await managerContract.connect(signer).updateAuthority(targetAddress, newAuthority);
+            const tx = await accessManagerContract.connect(signer).updateAuthority(targetAddress, newAuthority);
             await tx.wait();
             toast.success("Authority updated");
         } catch (err) {
@@ -155,15 +155,7 @@ export default function TargetSettingsPage({ managerContract, targetAddress, tar
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold">{targetName} Settings</h1>
-
-            <Card className="py-4">
-                <CardContent className="space-y-3 px-4">
-                    <h2 className="text-xl font-semibold">Target Info</h2>
-                    <p>Is Closed: {isClosed ? "Yes" : "No"}</p>
-                    <Button onClick={fetchTargetInfo}>Refresh Info</Button>
-                </CardContent>
-            </Card>
+            <h1 className="text-2xl font-bold">{targetName} Contract Settings</h1>
 
             <Card className="py-4">
                 <CardContent className="space-y-3 px-4">

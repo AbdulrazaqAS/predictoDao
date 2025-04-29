@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-export default function NewQuestionTab() {
+export default function NewQuestionDashboard() {
     const [question, setQuestion] = useState("");
     const [answers, setAnswers] = useState([""]);
     const [image, setImage] = useState(null);

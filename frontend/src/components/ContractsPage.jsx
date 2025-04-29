@@ -1,26 +1,29 @@
 import { useEffect, useState } from "react";
 
-import ManagerDashboard from "./ManagerDashboard";
-import QuestionManagerTab from "./QuestionManagerTab";
+import AccessManagerDashboard from "./AccessManagerDashboard";
+import QuestionManagerDashboard from "./QuestionManagerDashboard";
 
-export default function ContractsPage({ managerContract, signer, signerRoles }) {
+export default function ContractsPage({ accessManagerContract, questionManagerContract, signer, signerRoles }) {
     const [activeContract, setActiveContract] = useState({});
     const [contracts, setContracts] = useState([]);
     
     useEffect(() => {
         const contracts = [
-            { name: "Manager", component: ManagerDashboard, props: {
-                managerContract: managerContract, signer: signer, signerRoles: signerRoles
+            { name: "AccessManager", component: AccessManagerDashboard, props: {
+                    accessManagerContract: accessManagerContract, signer: signer, signerRoles: signerRoles
                 }
             },
-            { name: "QuestionManager", component: QuestionManagerTab, props: {} },
+            { name: "QuestionManager", component: QuestionManagerDashboard, props: {
+                    questionManagerContract: questionManagerContract, signer, signerRoles
+                }
+            },
         ];
 
         setContracts(contracts);
 
         const prevActiveContract = contracts.find((contract) => contract.name === activeContract.name);
         setActiveContract(prevActiveContract || contracts[0]);
-    }, [managerContract, signer, signerRoles]);
+    }, [accessManagerContract, questionManagerContract, signer, signerRoles]);
 
     return (
         <div className="w-full p-4">

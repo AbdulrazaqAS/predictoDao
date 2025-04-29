@@ -31,7 +31,7 @@ export default function App() {
   const [provider, setProvider] = useState(null);
   const [walletDetected, setWalletDetected] = useState(true);
   const [signer, setSigner] = useState();
-  const [managerContract, setManagerContract] = useState(null);
+  const [accessManagerContract, setAccessManagerContract] = useState(null);
   const [tokenContract, setTokenContract] = useState(null);
   const [questionManagerContract, setQuestionManagerContract] = useState(null);
   const [userManagerContract, setUserManagerContract] = useState(null);
@@ -94,7 +94,7 @@ export default function App() {
     const rolesList = Object.values(ROLES);
 
     for (const roleId of rolesList) {
-      const hasRole = await managerContract.hasRole(roleId, signer);
+      const hasRole = await accessManagerContract.hasRole(roleId, signer);
       if (hasRole[0]) {
         roles.push(roleId);
       }
@@ -147,8 +147,8 @@ export default function App() {
         return;
       }
 
-      const managerContract = new ethers.Contract(MANAGER_ADDRESS, MANAGER_ABI, provider);
-      setManagerContract(managerContract);
+      const accessManagerContract = new ethers.Contract(MANAGER_ADDRESS, MANAGER_ABI, provider);
+      setAccessManagerContract(accessManagerContract);
       console.log("Manager contract set.");
     });
 
@@ -213,7 +213,14 @@ export default function App() {
       }
       {page === "profile" && <div>Profile Page</div>}
       {page === "about" && <div>About Page</div>}
-      {page === "contracts" && <ContractsPage managerContract={managerContract} signer={signer} signerRoles={signerRoles} />}
+      {page === "contracts" &&
+        <ContractsPage
+          accessManagerContract={accessManagerContract}
+          questionManagerContract={questionManagerContract}
+          signer={signer}
+          signerRoles={signerRoles}
+        />
+      }
       <Toaster />
     </div>
   );

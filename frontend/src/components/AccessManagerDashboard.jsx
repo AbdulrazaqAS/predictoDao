@@ -16,7 +16,7 @@ import { ROLES } from "../utils";
 const PREDICTOTOKEN_ADDRESS = import.meta.env.VITE_PREDICTOTOKEN_ADDRESS;
 const QUESTION_MANAGER_ADDRESS = import.meta.env.VITE_QUESTION_MANAGER_ADDRESS;
 
-export default function ManagerDashboard({ managerContract, signer, signerRoles }) {
+export default function AccessManagerDashboard({ accessManagerContract, signer, signerRoles }) {
     const [grantAddress, setGrantAddress] = useState("");
     const [revokeAddress, setRevokeAddress] = useState("");
     const [roleToGrant, setRoleToGrant] = useState("");
@@ -25,10 +25,10 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
     const [callData, setCallData] = useState("");
     const [targets, setTargets] = useState([]);
 
-    const requiredRole = ROLES.ADMIN_ROLE;
+    const requiredRoles = [ROLES.ADMIN_ROLE];
 
     useEffect(() => {
-        if (!managerContract) return;
+        if (!accessManagerContract) return;
 
         const targets = [
             {address: PREDICTOTOKEN_ADDRESS, name: "Predicto Token", abi: PREDICTOTOKEN_ABI},
@@ -36,23 +36,32 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
         ];
 
         setTargets(targets);
-    }, [managerContract]);
+    }, [accessManagerContract]);
 
     function hasRequiredRole() {
-        if (!signerRoles.includes(requiredRole)) {
+        hasRole = false;
+        for (const role of requiredRoles) {
+            if (signerRoles.includes(role)) {
+                hasRole = true;
+                break;
+            }
+        }
+        
+        if (!hasRole) {
             toast.error("You don't have permission to perform this action.");
             return false;
         }
+
         return true;
     }
 
     async function handleGrantRole() {
-        if (!hasRequiredRole()) return;
-
         if (!window.ethereum) {  // TODO: Use error bar
             toast.error("No wallet detected");
             return;
         }
+        
+        if (!hasRequiredRole()) return;
 
         if (!grantAddress || grantAddress.length != 42) {  // 42 = 20 bytes + Ox
             toast.error("Invalid Address");
@@ -71,7 +80,7 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
             const signer = await provider.getSigner(0);
 
             // TODO: Add a delay input and use it
-            const tx = await managerContract.connect(signer).grantRole(BigInt(roleToGrant), grantAddress, 0);
+            const tx = await accessManagerContract.connect(signer).grantRole(BigInt(roleToGrant), grantAddress, 0);
             await tx.wait();
             toast.success("Role granted!");
         } catch (err) {
@@ -81,13 +90,13 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
     }
     
     async function handleRevokeRole() {
-        if (!hasRequiredRole()) return;
-
         if (!window.ethereum) {
             toast.error("No wallet detected");
             return;
         }
         
+        if (!hasRequiredRole()) return;
+
         if (!revokeAddress || revokeAddress.length != 42) {  // 42 = 20 bytes + Ox
             toast.error("Invalid Address");
             console.error("Invalid address")
@@ -106,7 +115,7 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
 
-            const tx = await managerContract.connect(signer).revokeRole(roleToRevoke, revokeAddress);
+            const tx = await accessManagerContract.connect(signer).revokeRole(roleToRevoke, revokeAddress);
             await tx.wait();
             toast.success("Role revoked!");
         } catch (err) {
@@ -116,15 +125,15 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
     }
 
     async function handleExecuteCall() {
-        if (!hasRequiredRole()) return;
-
         if (!window.ethereum) {
             toast.error("No wallet detected");
             return;
         }
+        
+        if (!hasRequiredRole()) return;
 
         try {
-            const tx = await managerContract.connect(signer).execute(callTarget, callData);
+            const tx = await accessManagerContract.connect(signer).execute(callTarget, callData);
             await tx.wait();
             toast.success("Call executed!");
         } catch (err) {
@@ -135,7 +144,7 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
 
     return (
         <div className="grid gap-6 p-4 max-w-3xl mx-auto">
-            <h1 className="text-2xl font-bold">Manager Settings</h1>
+            <h1 className="text-2xl font-bold">Access Manager Contract Settings</h1>
             <Card className="py-4">
                 <CardContent className="px-4">
                     <h2 className="text-xl font-bold mb-2">Grant Role</h2>
@@ -213,7 +222,7 @@ export default function ManagerDashboard({ managerContract, signer, signerRoles 
             {targets.map((target, idx) => (
                 <TargetSettingsPage
                     key={idx}
-                    managerContract={managerContract}
+                    accessManagerContract={accessManagerContract}
                     targetAddress={target.address}
                     targetName={target.name}
                     targetABI={target.abi}
