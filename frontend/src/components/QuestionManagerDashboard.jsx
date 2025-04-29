@@ -112,9 +112,9 @@ export default function QuestionManagerDashboard({ questionManagerContract, sign
                         <Input
                             placeholder="New length"
                             type="number"
-                            value={minStringLength}
+                            value={newMinStringLength}
                             min="0"
-                            onChange={(e) => setMinStringLength(e.target.value)}
+                            onChange={(e) => setNewMinStringLength(e.target.value)}
                         />
                         <Button onClick={handleSetMinStringLength}>Update Length</Button>
                         <p className="text-sm">Current Length: {minStringLength} characters</p>
@@ -127,9 +127,9 @@ export default function QuestionManagerDashboard({ questionManagerContract, sign
                         <Input
                             placeholder="New duration (seconds)"
                             type="number"
-                            value={minDuration}
+                            value={newMinDuration}
                             min="0"
-                            onChange={(e) => setMinDuration(e.target.value)}
+                            onChange={(e) => setNewMinDuration(e.target.value)}
                         />
                         <Button onClick={handleSetMinDuration}>Update Duration</Button>
                         <p className="text-sm">Current Duration: {minDuration} seconds</p>
