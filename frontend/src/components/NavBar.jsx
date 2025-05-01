@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react"; // Optional icons (requires lucide-react or replace with text)
+import { Menu, X } from "lucide-react";
 
 export default function NavBar({ setPage, signer, setSigner }) {
   const [connected, setConnected] = useState(false);

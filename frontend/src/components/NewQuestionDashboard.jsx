@@ -3,16 +3,13 @@ import axios from "axios";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-export default function NewQuestionDashboard() {
+export default function NewQuestionDashboard({ questionManagerContract, signer, hasRequiredRole }) {
     const [question, setQuestion] = useState("");
     const [answers, setAnswers] = useState([""]);
     const [image, setImage] = useState(null);
     const [deadline, setDeadline] = useState("");
-    const [hasPrize, setHasPrize] = useState(false);
-    const [prize, setPrize] = useState("");
     const [focusedAnswer, setFocusedAnswer] = useState(0);
     const [isCreating, setIsCreating] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -58,13 +55,14 @@ export default function NewQuestionDashboard() {
             const result = response.data;
 
             if (response.statusText === "OK" || response.status === 200) {
+                toast.success("Image uploaded to IPFS successfully");
                 return result.ipfsHash;
             } else {
                 throw new Error(result.error || "Unknown error");
             }
         } catch (error) {
             console.error("Error uploading to IPFS:", error);
-            alert("Uploading to IPFS failed.");
+            toast.error("Failed to upload image to IPFS");
             return "";
         } finally {
             setIsUploading(false);
@@ -74,22 +72,35 @@ export default function NewQuestionDashboard() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // if (!window.ethereum) {
+        //     toast.error("No wallet detected");
+        //     return;
+        // }
+
+        if (!signer) {
+            toast.error("Please connect your wallet");
+            return;
+        }
+
+        if (!hasRequiredRole()) return;
+
         const ipfsHash = await uploadToIPFS();
-        if (!ipfsHash) return;
-
-        setIsCreating(true);
-
-        const payload = {
-            question,
-            answers: answers.filter(a => a.trim() !== ""),
-            ipfsHash,
-            deadline,
-            prize: hasPrize ? prize : 0
-        };
+        if (!ipfsHash) return;        
+        
         try {
-            console.log("Submitting:", payload);
+            setIsCreating(true);
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner(0);
+            const deadlineInSecs = Math.floor(new Date(deadline).getTime() / 1000);
+            const filteredAnswers = answers.filter((answer) => answer.trim() !== "");
+
+            const tx = await questionManagerContract.connect(signer).newQuestion(
+                question, filteredAnswers, deadlineInSecs, ipfsHash);
+            await tx.wait();
+            toast.success("New question added");
         } catch (error) {
             console.error("Error creating question:", error);
+            toast.error("Failed to add new question");
         } finally {
             setIsCreating(false);
         }
@@ -163,7 +174,7 @@ export default function NewQuestionDashboard() {
                         />
                     </div>
 
-                    {/* Optional Prize */}
+                    {/* Optional Prize
                     <div className="flex items-center space-x-3">
                         <label className="text-sm font-medium text-gray-700">Prize?</label>
                         <input
@@ -186,7 +197,7 @@ export default function NewQuestionDashboard() {
                                 className="w-full p-2 border rounded"
                             />
                         </div>
-                    )}
+                    )} */}
 
                     {/* Submit */}
                     <Button

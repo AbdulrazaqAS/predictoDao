@@ -14,7 +14,6 @@ export default function QuestionManagerDashboard({ questionManagerContract, sign
     const [minDuration, setMinDuration] = useState(0);
     const [newMinStringLength, setNewMinStringLength] = useState(0);
     const [newMinDuration, setNewMinDuration] = useState(0);
-    
 
     const requiredRoles = [ROLES.ADMIN_ROLE];
 
@@ -36,8 +35,13 @@ export default function QuestionManagerDashboard({ questionManagerContract, sign
     }
 
     async function handleSetMinStringLength() {
-        if (!window.ethereum) {
-            toast.error("No wallet detected");
+        // if (!window.ethereum) {
+        //     toast.error("No wallet detected");
+        //     return;
+        // }
+
+        if (!signer) {
+            toast.error("Please connect your wallet");
             return;
         }
 
@@ -47,7 +51,7 @@ export default function QuestionManagerDashboard({ questionManagerContract, sign
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
 
-            const tx = await questionManagerContract.connect(signer).setMinStringBytes(newMinStringLenght);
+            const tx = await questionManagerContract.connect(signer).setMinStringBytes(newMinStringLength);
             await tx.wait();
             toast.success("Minimum string length updated successfully");
         } catch (err) {
@@ -57,8 +61,13 @@ export default function QuestionManagerDashboard({ questionManagerContract, sign
     }
 
     async function handleSetMinDuration() {
-        if (!window.ethereum) {
-            toast.error("No wallet detected");
+        // if (!window.ethereum) {
+        //     toast.error("No wallet detected");
+        //     return;
+        // }
+
+        if (!signer) {
+            toast.error("Please connect your wallet");
             return;
         }
 
@@ -104,7 +113,7 @@ export default function QuestionManagerDashboard({ questionManagerContract, sign
 
     return (
         <div className="flex flex-col space-y-4 p-4 md:space-x-4 items-first justify-around md:space-y-0 md:flex-row">
-            <NewQuestionDashboard />
+            <NewQuestionDashboard questionManagerContract={questionManagerContract} signer={signer} hasRequiredRole={hasRequiredRole} />
             <div className="flex flex-col space-y-4 w-full md:w-2/5">
                 <Card className="py-4">
                     <CardContent className="space-y-3 px-4">

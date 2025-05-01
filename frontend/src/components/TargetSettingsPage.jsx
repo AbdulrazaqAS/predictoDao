@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem
+} from "@/components/ui/select";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -42,6 +50,18 @@ export default function TargetSettingsPage({ accessManagerContract, targetAddres
         setTargetFunctions(externalFuncs);
     }
 
+    async function signerCanCall(funcName) {
+        const funcObj = targetFunctions.find(func => func.name === funcName);
+        if (Object.keys(funcObj).length === 0) {
+            console.error("Invalid function name:", funcName);
+            return false;
+        }
+
+        const funcSelector = funcObj.selector;
+        const canCall = await accessManagerContract.canCall(signer, targetAddress, funcSelector);
+        return canCall;
+    }
+
     async function fetchTargetInfo() {
         try {
             const closed = await accessManagerContract.isTargetClosed(targetAddress);
@@ -57,6 +77,11 @@ export default function TargetSettingsPage({ accessManagerContract, targetAddres
     }
 
     async function fetchFunctionRole() {
+        if (!functionToGetRole){
+            toast.error("No function selected");
+            return;
+        }
+
         try {
             const roleId = await accessManagerContract.getTargetFunctionRole(targetAddress, functionToGetRole);
             // TODO: use labelRole
@@ -71,6 +96,11 @@ export default function TargetSettingsPage({ accessManagerContract, targetAddres
     }
 
     async function handleSetFunctionRole() {
+        if (!signer) {
+            toast.error("Please connect your wallet");
+            return;
+        }
+
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
@@ -88,6 +118,11 @@ export default function TargetSettingsPage({ accessManagerContract, targetAddres
     }
 
     async function handleSetAdminDelay() {
+        if (!signer) {
+            toast.error("Please connect your wallet");
+            return;
+        }
+
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
@@ -104,6 +139,11 @@ export default function TargetSettingsPage({ accessManagerContract, targetAddres
     }
 
     async function handleSetTargetClosed() {
+        if (!signer) {
+            toast.error("Please connect your wallet");
+            return;
+        }
+
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);
@@ -141,6 +181,11 @@ export default function TargetSettingsPage({ accessManagerContract, targetAddres
     // }
 
     async function handleUpdateAuthority() {
+        if (!signer) {
+            toast.error("Please connect your wallet");
+            return;
+        }
+
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner(0);

@@ -14,7 +14,7 @@ export default function QuestionCard({
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const timeDiff = new Date(deadline) - now;
+      const timeDiff = new Date(deadline).getTime() - now.getTime();
       if (timeDiff <= 0) {
         setTimeLeft("Closed");
         clearInterval(interval);
